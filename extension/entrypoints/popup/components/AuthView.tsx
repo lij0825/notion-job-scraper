@@ -85,7 +85,7 @@ const AuthView: React.FC<AuthViewProps> = ({
 					<h2 className="auth-hero__title">Notion에 연결하세요</h2>
 					<p className="auth-hero__desc">
 						Notion 계정을 연결하면 채용 공고를<br />
-						자동으로 데이터베이스에 저장할 수 있습니다.
+						원하는 정보만 선택하여 저장할 수 있습니다.
 					</p>
 				</div>
 
@@ -109,7 +109,11 @@ const AuthView: React.FC<AuthViewProps> = ({
 				<div className="auth-features">
 					<div className="feature-item">
 						<span className="feature-icon" aria-hidden="true">✨</span>
-						<span>4개 채용 사이트 자동 스크래핑</span>
+						<span>4개 채용 사이트 원클릭 스크래핑</span>
+					</div>
+					<div className="feature-item">
+						<span className="feature-icon" aria-hidden="true">✏️</span>
+						<span>필드별 편집·선택 후 저장</span>
 					</div>
 					<div className="feature-item">
 						<span className="feature-icon" aria-hidden="true">📅</span>

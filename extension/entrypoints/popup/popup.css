@@ -357,119 +357,204 @@ body {
 	letter-spacing: 0.2px;
 }
 
-/* ── 채용 공고 카드 ── */
-.job-card {
-	background: var(--bg-card);
-	border: 1px solid var(--border-subtle);
-	border-radius: var(--radius-lg);
-	padding: 14px;
-	display: flex;
-	flex-direction: column;
-	gap: 10px;
-	transition: border-color var(--ease-normal), background var(--ease-normal);
-	box-shadow: var(--shadow-card);
-}
-
-.job-card:hover {
-	background: var(--bg-card-hover);
-	border-color: var(--border-default);
-}
-
-.job-card__header {
-	display: flex;
-	flex-direction: column;
-	gap: 4px;
-}
-
-.job-card__title {
-	font-size: 14px;
-	font-weight: 600;
-	color: var(--text-primary);
-	line-height: 1.4;
-	/* 2줄 초과 시 말줄임 */
-	display: -webkit-box;
-	-webkit-line-clamp: 2;
-	-webkit-box-orient: vertical;
-	overflow: hidden;
-}
-
-.job-card__company {
-	font-size: 12px;
-	font-weight: 500;
-	color: var(--text-accent);
-}
-
-.job-card__meta {
-	display: flex;
-	flex-direction: column;
-	gap: 6px;
-	padding: 10px 0;
-	border-top: 1px solid var(--border-subtle);
-	border-bottom: 1px solid var(--border-subtle);
-}
-
-.meta-item {
+.toolbar-actions {
 	display: flex;
 	align-items: center;
 	gap: 8px;
 }
 
-.meta-label {
+.field-count {
 	font-size: 11px;
 	color: var(--text-muted);
 	font-weight: 500;
-	min-width: 40px;
-	text-transform: uppercase;
-	letter-spacing: 0.5px;
 }
 
-.meta-value {
-	font-size: 12px;
+/* ── 편집 가능 필드 폼 ── */
+.field-form {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.field-row {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	padding: 10px 12px;
+	background: var(--bg-card);
+	border: 1px solid var(--border-subtle);
+	border-radius: var(--radius-md);
+	transition: background var(--ease-fast), border-color var(--ease-fast), opacity var(--ease-fast);
+}
+
+.field-row:hover {
+	border-color: var(--border-default);
+}
+
+.field-row--disabled {
+	opacity: 0.5;
+	background: transparent;
+}
+
+.field-row--disabled:hover {
+	border-color: var(--border-subtle);
+}
+
+/* ── 체크박스 ── */
+.field-checkbox-label {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	cursor: pointer;
+	user-select: none;
+}
+
+/* 네이티브 체크박스 숨김 */
+.field-checkbox {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+/* 커스텀 체크박스 */
+.field-checkbox-custom {
+	width: 16px;
+	height: 16px;
+	flex-shrink: 0;
+	border: 1.5px solid var(--border-default);
+	border-radius: 4px;
+	background: var(--bg-input);
+	transition: background var(--ease-fast), border-color var(--ease-fast), box-shadow var(--ease-fast);
+	position: relative;
+}
+
+/* 체크 상태 */
+.field-checkbox:checked + .field-checkbox-custom {
+	background: var(--accent-gradient);
+	border-color: var(--accent-violet);
+	box-shadow: 0 0 8px rgba(124, 58, 237, 0.25);
+}
+
+/* 체크마크 */
+.field-checkbox:checked + .field-checkbox-custom::after {
+	content: '';
+	position: absolute;
+	top: 2px;
+	left: 5px;
+	width: 4px;
+	height: 8px;
+	border: solid #fff;
+	border-width: 0 1.5px 1.5px 0;
+	transform: rotate(45deg);
+}
+
+/* 필수 필드 잠금 아이콘 */
+.field-checkbox-custom--locked {
+	cursor: not-allowed;
+}
+
+.field-checkbox:disabled + .field-checkbox-custom--locked {
+	opacity: 0.85;
+}
+
+.field-checkbox-label:hover .field-checkbox-custom:not(.field-checkbox-custom--locked) {
+	border-color: var(--border-focus);
+}
+
+.field-label {
+	font-size: 11.5px;
+	font-weight: 500;
 	color: var(--text-secondary);
+	display: flex;
+	align-items: center;
+	gap: 4px;
 }
 
-.meta-value--always-open {
+.field-required {
+	color: var(--accent-violet);
+	font-weight: 700;
+	font-size: 13px;
+	line-height: 1;
+}
+
+.field-badge-inline {
+	padding: 1px 6px;
 	background: rgba(251, 191, 36, 0.12);
 	color: var(--color-warning);
-	padding: 1px 7px;
-	border-radius: var(--radius-full);
 	border: 1px solid rgba(251, 191, 36, 0.2);
-	font-size: 11px;
-	font-weight: 500;
+	border-radius: var(--radius-full);
+	font-size: 10px;
+	font-weight: 600;
+	margin-left: 4px;
 }
 
-.meta-link {
+/* ── 텍스트 인풋 ── */
+.field-input {
+	width: 100%;
+	padding: 7px 10px;
+	background: var(--bg-input);
+	border: 1px solid var(--border-default);
+	border-radius: var(--radius-sm);
+	color: var(--text-primary);
+	font-family: inherit;
 	font-size: 12px;
-	color: var(--accent-violet);
-	text-decoration: none;
-	transition: color var(--ease-fast), text-decoration var(--ease-fast);
+	outline: none;
+	transition: border-color var(--ease-fast), box-shadow var(--ease-fast);
 }
 
-.meta-link:hover {
-	color: #a78bfa;
-	text-decoration: underline;
+.field-input:focus {
+	border-color: var(--border-focus);
+	box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.15);
 }
 
-.job-card__description {
-	margin-top: 2px;
+.field-input:disabled {
+	opacity: 0.4;
+	cursor: not-allowed;
 }
 
-.description-preview {
-	font-size: 11.5px;
+.field-input::placeholder {
 	color: var(--text-muted);
+}
+
+.field-input--url {
+	font-size: 11px;
+	color: var(--text-accent);
+}
+
+/* ── 텍스트에어리어 ── */
+.field-textarea {
+	width: 100%;
+	padding: 7px 10px;
+	background: var(--bg-input);
+	border: 1px solid var(--border-default);
+	border-radius: var(--radius-sm);
+	color: var(--text-primary);
+	font-family: inherit;
+	font-size: 11.5px;
 	line-height: 1.6;
-	/* 3줄 초과 말줄임 */
-	display: -webkit-box;
-	-webkit-line-clamp: 3;
-	-webkit-box-orient: vertical;
-	overflow: hidden;
+	resize: vertical;
+	min-height: 60px;
+	max-height: 160px;
+	outline: none;
+	transition: border-color var(--ease-fast), box-shadow var(--ease-fast);
 }
 
-/* ── DatePicker 섹션 ── */
-.date-picker-section {
-	animation: fadeSlideIn 0.2s var(--ease-normal);
+.field-textarea:focus {
+	border-color: var(--border-focus);
+	box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.15);
 }
 
+.field-textarea::placeholder {
+	color: var(--text-muted);
+}
+
+/* ── 애니메이션 ── */
 @keyframes fadeSlideIn {
 	from {
 		opacity: 0;
@@ -483,27 +568,26 @@ body {
 
 /* ── DatePicker 컴포넌트 ── */
 .date-picker {
-	background: var(--bg-card);
-	border: 1px solid var(--border-default);
-	border-radius: var(--radius-lg);
-	padding: 12px 14px;
+	background: transparent;
+	border: none;
+	padding: 0;
 	display: flex;
 	flex-direction: column;
-	gap: 8px;
+	gap: 6px;
 }
 
 .date-picker__label {
 	display: flex;
 	align-items: center;
 	gap: 6px;
-	font-size: 12px;
+	font-size: 11.5px;
 	font-weight: 500;
 	color: var(--text-secondary);
 	cursor: default;
 }
 
 .date-picker__icon {
-	font-size: 13px;
+	font-size: 12px;
 }
 
 .date-picker__badge {
@@ -528,7 +612,7 @@ body {
 	padding: 7px 10px;
 	background: var(--bg-input);
 	border: 1px solid var(--border-default);
-	border-radius: var(--radius-md);
+	border-radius: var(--radius-sm);
 	color: var(--text-primary);
 	font-family: inherit;
 	font-size: 12px;
@@ -567,6 +651,19 @@ body {
 .date-picker__hint {
 	font-size: 11px;
 	color: var(--text-muted);
+}
+
+/* ── 마감일 DatePicker 인라인 ── */
+.field-deadline-picker {
+	animation: fadeSlideIn 0.15s var(--ease-fast);
+}
+
+/* ── 제외 힌트 ── */
+.field-excluded-hint {
+	font-size: 11px;
+	color: var(--text-muted);
+	font-style: italic;
+	padding: 4px 0;
 }
 
 /* ── 저장 피드백 ── */

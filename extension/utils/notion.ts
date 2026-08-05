@@ -88,19 +88,23 @@ export async function createJobPage(
 	const response = await notion.pages.create({
 		parent: { database_id: databaseId },
 		properties: {
-			// 직무명 (Title 속성)
+			// 직무명 (Title 속성 — 필수)
 			Title: {
 				title: [{ text: { content: jobData.title || '(제목 없음)' } }],
 			},
-			// 회사명 (Rich Text 속성)
-			Company: {
-				rich_text: [{ text: { content: jobData.company || '(회사명 없음)' } }],
-			},
-			// 공고 URL (URL 속성)
+			// 회사명 (Rich Text 속성 — 선택: 빈 문자열이면 제외)
+			...(jobData.company
+				? {
+						Company: {
+							rich_text: [{ text: { content: jobData.company } }],
+						},
+					}
+				: {}),
+			// 공고 URL (URL 속성 — 필수)
 			URL: {
 				url: jobData.url,
 			},
-			// 마감일 (Date 속성) — Notion 캘린더 자동 동기화에 필요
+			// 마감일 (Date 속성 — 선택: null이면 제외)
 			...(jobData.deadline
 				? {
 						Deadline: {
@@ -113,7 +117,7 @@ export async function createJobPage(
 				select: { name: '지원 예정' },
 			},
 		},
-		// 직무 설명을 페이지 본문 블록으로 추가
+		// 직무 설명을 페이지 본문 블록으로 추가 (비어있으면 빈 배열)
 		children: buildDescriptionBlocks(jobData.description),
 	});
 
