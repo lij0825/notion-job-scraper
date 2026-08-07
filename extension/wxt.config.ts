@@ -8,6 +8,12 @@ export default defineConfig({
 		name: 'Notion Job Scraper',
 		description: '한국 채용 공고를 스크래핑하여 Notion 데이터베이스에 자동 동기화합니다.',
 		version: '1.0.0',
+		// Firefox 확장 ID 고정 — Redirect URI가 리빌드마다 변경되지 않도록 방지
+		browser_specific_settings: {
+			gecko: {
+				id: 'notion-job-scraper@lij0825.com',
+			},
+		},
 		// 확장 프로그램 아이콘 (Chrome 웹 스토어 + 툴바 표시)
 		icons: {
 			16: 'icon/16.png',
