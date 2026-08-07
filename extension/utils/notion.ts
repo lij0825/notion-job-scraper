@@ -137,7 +137,12 @@ export async function validateDatabase(
 	const notion = new Client({ auth: accessToken });
 	const db = await notion.databases.retrieve({ database_id: databaseId });
 
-	// 데이터베이스 제목 추출
+	// 부분 응답(PartialDatabaseObjectResponse)에는 title 속성이 없으므로 타입 가드로 구분
+	if (!('title' in db)) {
+		return { valid: true, name: '(제목 없음)' };
+	}
+
+	// 전체 응답(DatabaseObjectResponse)에서 데이터베이스 제목 추출
 	const titleProp = db.title;
 	const name =
 		titleProp.length > 0 && titleProp[0]?.plain_text ? titleProp[0].plain_text : '(제목 없음)';

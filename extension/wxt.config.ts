@@ -8,6 +8,13 @@ export default defineConfig({
 		name: 'Notion Job Scraper',
 		description: '한국 채용 공고를 스크래핑하여 Notion 데이터베이스에 자동 동기화합니다.',
 		version: '1.0.0',
+		// 확장 프로그램 아이콘 (Chrome 웹 스토어 + 툴바 표시)
+		icons: {
+			16: 'icon/16.png',
+			32: 'icon/32.png',
+			48: 'icon/48.png',
+			128: 'icon/128.png',
+		},
 		// MV3 필수 권한
 		permissions: ['storage', 'identity', 'tabs', 'scripting', 'activeTab'],
 		// 스크래핑 대상 사이트 + Notion API 접근 허용
