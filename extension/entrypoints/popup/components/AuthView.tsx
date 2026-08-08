@@ -1,12 +1,14 @@
-import React, { useId, useRef, useState } from 'react';
+import React, { useId, useState } from 'react';
 import StatusBadge from './StatusBadge';
-import type { AuthStatus, BackgroundResponse } from '../../../utils/types';
+import type { AuthStatus, BackgroundResponse, ConnectionError } from '../../../utils/types';
 
 interface AuthViewProps {
 	authStatus: AuthStatus;
 	onConnect: () => Promise<BackgroundResponse<AuthStatus>>;
 	onLogout: () => Promise<void>;
 	onSaveDatabaseId: (id: string) => Promise<BackgroundResponse<{ name: string }>>;
+	/** 마지막 OAuth 연결 에러 — 미연결 상태에서 표시 */
+	lastError?: ConnectionError;
 }
 
 /**
@@ -23,6 +25,7 @@ const AuthView: React.FC<AuthViewProps> = ({
 	onConnect,
 	onLogout,
 	onSaveDatabaseId,
+	lastError,
 }) => {
 	const [isConnecting, setIsConnecting] = useState(false);
 	const [connectError, setConnectError] = useState<string | null>(null);
@@ -88,6 +91,19 @@ const AuthView: React.FC<AuthViewProps> = ({
 						원하는 정보만 선택하여 저장할 수 있습니다.
 					</p>
 				</div>
+
+				{/* 이전 OAuth 실패 이력 (storage.local에서 조회) */}
+				{lastError && !connectError && (
+					<div className="error-banner error-banner--persistent" role="alert">
+						<span aria-hidden="true">⚠️</span>
+						<div>
+							<span>{lastError.message}</span>
+							<time className="error-banner__time">
+								{new Date(lastError.occurredAt).toLocaleString()}
+							</time>
+						</div>
+					</div>
+				)}
 
 				{connectError && (
 					<div className="error-banner" role="alert">

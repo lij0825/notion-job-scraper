@@ -6,6 +6,7 @@ declare global {
   const MatchPattern: typeof import('wxt/sandbox')['MatchPattern']
   const MigrationError: typeof import('wxt/storage')['MigrationError']
   const browser: typeof import('wxt/browser')['browser']
+  const clearConnectionError: typeof import('C:/Users/이인준/.gemini/antigravity/scratch/notion-job-scraper/extension/utils/storage')['clearConnectionError']
   const clearStoredData: typeof import('C:/Users/이인준/.gemini/antigravity/scratch/notion-job-scraper/extension/utils/storage')['clearStoredData']
   const createIframeUi: typeof import('wxt/client')['createIframeUi']
   const createIntegratedUi: typeof import('wxt/client')['createIntegratedUi']
@@ -18,10 +19,12 @@ declare global {
   const defineUnlistedScript: typeof import('wxt/sandbox')['defineUnlistedScript']
   const defineWxtPlugin: typeof import('wxt/sandbox')['defineWxtPlugin']
   const fakeBrowser: typeof import('wxt/testing')['fakeBrowser']
+  const getConnectionError: typeof import('C:/Users/이인준/.gemini/antigravity/scratch/notion-job-scraper/extension/utils/storage')['getConnectionError']
   const getStoredData: typeof import('C:/Users/이인준/.gemini/antigravity/scratch/notion-job-scraper/extension/utils/storage')['getStoredData']
   const injectScript: typeof import('wxt/client')['injectScript']
   const parseDeadline: typeof import('C:/Users/이인준/.gemini/antigravity/scratch/notion-job-scraper/extension/utils/sanitize')['parseDeadline']
   const sanitizeText: typeof import('C:/Users/이인준/.gemini/antigravity/scratch/notion-job-scraper/extension/utils/sanitize')['sanitizeText']
+  const setConnectionError: typeof import('C:/Users/이인준/.gemini/antigravity/scratch/notion-job-scraper/extension/utils/storage')['setConnectionError']
   const setStoredData: typeof import('C:/Users/이인준/.gemini/antigravity/scratch/notion-job-scraper/extension/utils/storage')['setStoredData']
   const storage: typeof import('wxt/storage')['storage']
   const updateDatabaseId: typeof import('C:/Users/이인준/.gemini/antigravity/scratch/notion-job-scraper/extension/utils/storage')['updateDatabaseId']
@@ -38,6 +41,6 @@ declare global {
 // for type re-export
 declare global {
   // @ts-ignore
-  export type { SiteKey, JobData, StorageData, AuthStatus, BackgroundMessage, ScrapeMessage, BackgroundResponse, ScrapeResponse, NotionTokenResponse } from 'C:/Users/이인준/.gemini/antigravity/scratch/notion-job-scraper/extension/utils/types'
+  export type { SiteKey, JobData, StorageData, ConnectionError, AuthStatus, BackgroundMessage, ScrapeMessage, BackgroundResponse, ScrapeResponse, NotionTokenResponse } from 'C:/Users/이인준/.gemini/antigravity/scratch/notion-job-scraper/extension/utils/types'
   import('C:/Users/이인준/.gemini/antigravity/scratch/notion-job-scraper/extension/utils/types')
 }

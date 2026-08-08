@@ -134,6 +134,15 @@ const App: React.FC = () => {
 		setActiveView('settings');
 	};
 
+	/** 연결 에러 배너 닫기 — storage.local에서도 삭제 */
+	const handleDismissError = async () => {
+		await sendToBackground({ type: 'DISMISS_ERROR' });
+		setAuthStatus((prev) => {
+			const { lastError: _, ...rest } = prev;
+			return rest as AuthStatus;
+		});
+	};
+
 	/** Database ID 저장 */
 	const handleSaveDatabaseId = async (databaseId: string) => {
 		const response = await sendToBackground({
@@ -200,6 +209,45 @@ const App: React.FC = () => {
 				</div>
 			</header>
 
+			{/* 연결 상태 표시기 */}
+			<div className={`connection-status-bar ${
+				authStatus.lastError
+					? 'connection-status-bar--error'
+					: authStatus.isConnected
+						? 'connection-status-bar--connected'
+						: 'connection-status-bar--disconnected'
+			}`}>
+				<span className="connection-status-bar__dot" aria-hidden="true" />
+				<span className="connection-status-bar__text">
+					{authStatus.lastError
+						? 'Error'
+						: authStatus.isConnected
+							? `Connected${authStatus.workspaceName ? ` — ${authStatus.workspaceName}` : ''}`
+							: 'Disconnected'}
+				</span>
+			</div>
+
+			{/* 에러 배너 (dismissable) */}
+			{authStatus.lastError && (
+				<div className="connection-error-banner" role="alert">
+					<div className="connection-error-banner__content">
+						<strong className="connection-error-banner__title">Connection Failed</strong>
+						<p className="connection-error-banner__message">{authStatus.lastError.message}</p>
+						<time className="connection-error-banner__time">
+							{new Date(authStatus.lastError.occurredAt).toLocaleString()}
+						</time>
+					</div>
+					<button
+						className="connection-error-banner__dismiss"
+						onClick={handleDismissError}
+						aria-label="에러 닫기"
+						title="닫기"
+					>
+						✕
+					</button>
+				</div>
+			)}
+
 			{/* 메인 콘텐츠 */}
 			<main className="app-main">
 				{activeView === 'scraping' ? (
@@ -217,6 +265,7 @@ const App: React.FC = () => {
 						onConnect={handleConnect}
 						onLogout={handleLogout}
 						onSaveDatabaseId={handleSaveDatabaseId}
+						lastError={authStatus.lastError}
 					/>
 				)}
 			</main>

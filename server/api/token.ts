@@ -16,6 +16,12 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
  * 응답: Notion OAuth 토큰 응답 페이로드 그대로 전달
  */
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
+	// 환경변수 존재 여부 디버그 로그 — 배포 환경에서 설정 누락을 빠르게 식별하기 위함
+	console.log('[token] 환경변수 확인:', {
+		NOTION_CLIENT_ID: process.env['NOTION_CLIENT_ID'] ? '설정됨' : '누락',
+		NOTION_CLIENT_SECRET: process.env['NOTION_CLIENT_SECRET'] ? '설정됨' : '누락',
+	});
+
 	// OPTIONS preflight 요청 처리 (CORS)
 	if (req.method === 'OPTIONS') {
 		setCorsHeaders(res);
@@ -80,30 +86,47 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 		});
 	} catch (networkErr) {
 		// Notion API 네트워크 오류 (타임아웃, DNS 실패 등)
-		console.error('[token] Notion API 네트워크 오류:', networkErr);
+		const networkErrMsg = networkErr instanceof Error ? networkErr.message : String(networkErr);
+		console.error('[token] Notion API 네트워크 오류:', {
+			error: networkErrMsg,
+			stack: networkErr instanceof Error ? networkErr.stack : undefined,
+		});
 		res.status(502).json({
-			error: 'Notion API에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.',
+			status: 502,
+			error: 'network_error',
+			error_description: `Notion API에 연결할 수 없습니다: ${networkErrMsg}`,
 		});
 		return;
 	}
 
 	// Notion API 응답 파싱
 	const responseText = await notionResponse.text();
-	let responseData: unknown;
+	let responseData: Record<string, unknown>;
 	try {
-		responseData = JSON.parse(responseText);
+		responseData = JSON.parse(responseText) as Record<string, unknown>;
 	} catch {
-		// JSON 파싱 실패 시 원본 텍스트 포함하여 에러 반환
+		// JSON 파싱 실패 시 구조화된 에러로 변환하여 반환
+		console.error('[token] Notion API 응답 JSON 파싱 실패:', responseText.slice(0, 500));
 		res.status(notionResponse.status).json({
-			error: `Notion API가 예상치 못한 응답을 반환했습니다: ${responseText.slice(0, 200)}`,
+			status: notionResponse.status,
+			error: 'invalid_response',
+			error_description: `Notion API가 예상치 못한 응답을 반환했습니다: ${responseText.slice(0, 200)}`,
 		});
 		return;
 	}
 
-	// Notion API 오류 응답 전달 (클라이언트가 처리할 수 있도록)
+	// Notion API 오류 응답 — 구조화된 필드로 재구성하여 전달
 	if (!notionResponse.ok) {
-		console.error('[token] Notion API 오류:', notionResponse.status, responseData);
-		res.status(notionResponse.status).json(responseData);
+		console.error('[token] Notion API 오류:', {
+			httpStatus: notionResponse.status,
+			notionError: responseData['error'],
+			notionMessage: responseData['message'],
+		});
+		res.status(notionResponse.status).json({
+			status: notionResponse.status,
+			error: responseData['error'] ?? 'unknown_error',
+			error_description: responseData['message'] ?? JSON.stringify(responseData),
+		});
 		return;
 	}
 

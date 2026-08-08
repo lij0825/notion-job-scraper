@@ -1,6 +1,14 @@
 import { browser } from 'wxt/browser';
 import { createJobPage, validateDatabase } from '../../utils/notion';
-import { getStoredData, setStoredData, clearStoredData, updateDatabaseId } from '../../utils/storage';
+import {
+	getStoredData,
+	setStoredData,
+	clearStoredData,
+	updateDatabaseId,
+	setConnectionError,
+	getConnectionError,
+	clearConnectionError,
+} from '../../utils/storage';
 import type {
 	BackgroundMessage,
 	BackgroundResponse,
@@ -61,6 +69,8 @@ async function handleMessage(message: BackgroundMessage): Promise<BackgroundResp
 			return saveToNotion(message.payload);
 		case 'SAVE_DATABASE_ID':
 			return saveDatabaseId(message.databaseId);
+		case 'DISMISS_ERROR':
+			return dismissConnectionError();
 		default: {
 			const _exhaustive: never = message;
 			return { success: false, error: '알 수 없는 메시지 타입입니다.' };
@@ -72,12 +82,13 @@ async function handleMessage(message: BackgroundMessage): Promise<BackgroundResp
 // 인증 상태 확인
 // ===========================================================
 
-/** 현재 Notion 연결 상태를 반환합니다. */
+/** 현재 Notion 연결 상태를 반환합니다. (에러 이력 포함) */
 async function getAuthStatus(): Promise<BackgroundResponse<AuthStatus>> {
 	const stored = await getStoredData();
+	const lastError = await getConnectionError();
 
 	if (!stored.accessToken) {
-		return { success: true, data: { isConnected: false } };
+		return { success: true, data: { isConnected: false, lastError } };
 	}
 
 	return {
@@ -86,6 +97,7 @@ async function getAuthStatus(): Promise<BackgroundResponse<AuthStatus>> {
 			isConnected: true,
 			workspaceName: stored.workspaceName,
 			databaseId: stored.databaseId,
+			lastError,
 		},
 	};
 }
@@ -138,7 +150,9 @@ async function startOAuthFlow(): Promise<BackgroundResponse<AuthStatus>> {
 		if (msg.includes('canceled') || msg.includes('cancelled') || msg.includes('closed')) {
 			return { success: false, error: '인증이 취소되었습니다.' };
 		}
-		return { success: false, error: `OAuth 인증 실패: ${msg}` };
+		const errorMsg = `OAuth 인증 실패: ${msg}`;
+		await setConnectionError(errorMsg);
+		return { success: false, error: errorMsg };
 	}
 
 	// 응답 URL에서 authorization code 추출
@@ -147,11 +161,15 @@ async function startOAuthFlow(): Promise<BackgroundResponse<AuthStatus>> {
 	const error = responseUrlObj.searchParams.get('error');
 
 	if (error) {
-		return { success: false, error: `Notion OAuth 오류: ${error}` };
+		const errorMsg = `Notion OAuth 오류: ${error}`;
+		await setConnectionError(errorMsg);
+		return { success: false, error: errorMsg };
 	}
 
 	if (!code) {
-		return { success: false, error: '인증 코드를 받지 못했습니다.' };
+		const errorMsg = '인증 코드를 받지 못했습니다.';
+		await setConnectionError(errorMsg);
+		return { success: false, error: errorMsg };
 	}
 
 	// Proxy 서버에 코드 교환 요청
@@ -167,19 +185,26 @@ async function startOAuthFlow(): Promise<BackgroundResponse<AuthStatus>> {
 
 		if (!tokenResponse.ok) {
 			const errorBody = await tokenResponse.text();
+			const errorMsg = `토큰 교환 실패 (${tokenResponse.status}): ${errorBody}`;
+			await setConnectionError(errorMsg);
 			return {
 				success: false,
-				error: `토큰 교환 실패 (${tokenResponse.status}): ${errorBody}`,
+				error: errorMsg,
 			};
 		}
 
 		tokenData = (await tokenResponse.json()) as NotionTokenResponse;
 	} catch (err) {
+		const errorMsg = `프록시 서버 연결 실패: ${err instanceof Error ? err.message : String(err)}`;
+		await setConnectionError(errorMsg);
 		return {
 			success: false,
-			error: `프록시 서버 연결 실패: ${err instanceof Error ? err.message : String(err)}`,
+			error: errorMsg,
 		};
 	}
+
+	// OAuth 성공 — 이전 연결 에러 삭제
+	await clearConnectionError();
 
 	// 스토리지에 인증 정보 저장
 	await setStoredData({
@@ -314,4 +339,14 @@ function extractDatabaseId(input: string): string {
 
 	// 그대로 반환 (이미 정제된 ID)
 	return input;
+}
+
+// ===========================================================
+// 연결 에러 닫기 (Dismiss)
+// ===========================================================
+
+/** 사용자가 에러 배너를 닫았을 때 storage.local에서 에러를 삭제합니다. */
+async function dismissConnectionError(): Promise<BackgroundResponse> {
+	await clearConnectionError();
+	return { success: true, data: undefined };
 }

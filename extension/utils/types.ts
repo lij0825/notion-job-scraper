@@ -41,11 +41,21 @@ export interface StorageData {
 // 인증 상태 타입
 // ===========================================================
 
+/** OAuth 연결 실패 시 저장되는 에러 정보 */
+export interface ConnectionError {
+	/** 에러 메시지 (사용자에게 표시) */
+	message: string;
+	/** 에러 발생 시각 (ISO 8601) */
+	occurredAt: string;
+}
+
 /** 현재 Notion 연결 상태 */
 export interface AuthStatus {
 	isConnected: boolean;
 	workspaceName?: string;
 	databaseId?: string;
+	/** 마지막 OAuth 연결 실패 정보 — storage.local에서 조회 */
+	lastError?: ConnectionError;
 }
 
 // ===========================================================
@@ -58,7 +68,8 @@ export type BackgroundMessage =
 	| { type: 'LOGOUT' }
 	| { type: 'GET_AUTH_STATUS' }
 	| { type: 'SAVE_TO_NOTION'; payload: JobData }
-	| { type: 'SAVE_DATABASE_ID'; databaseId: string };
+	| { type: 'SAVE_DATABASE_ID'; databaseId: string }
+	| { type: 'DISMISS_ERROR' };
 
 /** Popup → Content Script 스크래핑 요청 */
 export interface ScrapeMessage {
