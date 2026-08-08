@@ -1,129 +1,68 @@
-﻿import type { JobData } from '../types';
-import { sanitizeText, parseDeadline } from '../../../utils/sanitize';
+import type { JobData } from '../types';
 
-/**
- * 자소설닷컴 (jasoseol.com) 채용 공고 스크래퍼
- * URL 패턴: https://jasoseol.com/recruit/{id}
- *
- * 자소설닷컴은 SSR 기반 사이트이므로 DOM 파싱으로 처리합니다.
- * 다중 CSS 선택자 fallback 전략을 사용합니다.
- */
-export function scrapeJasoseol(): JobData | null {
-	const title = extractTitle();
-	const company = extractCompany();
-	const deadline = extractDeadline();
-	const description = extractDescription();
+export async function scrapeJasoseol(): Promise<JobData | null> {
+  // 1. STRICT GUARD: Check modal URL parameter (?ec=)
+  const ec = new URLSearchParams(window.location.search).get('ec');
+  if (!ec) {
+    console.log('[Jasoseol Scraper] No modal URL parameter (?ec=) found. Skipping.');
+    return null;
+  }
 
-	// 최소한 제목 또는 회사명이 있어야 유효한 페이지로 판단
-	if (!title && !company) {
-		return null;
-	}
+  // 2. Locate Active Container
+  let activeContainer = document.querySelector('[data-current="true"]') as HTMLElement;
 
-	return {
-		title: title || '(제목 없음)',
-		company: company || '(회사명 없음)',
-		url: window.location.href,
-		deadline,
-		description,
-		site: 'jasoseol',
-	};
-}
+  if (!activeContainer) {
+    const ecAnchors = Array.from(document.querySelectorAll(`a[href*="ec=${ec}"], [data-ec="${ec}"]`)) as HTMLElement[];
+    if (ecAnchors.length > 0) {
+      let parent: HTMLElement | null = ecAnchors[0];
+      while (parent && parent !== document.body) {
+        if (parent.innerText.length > 100) {
+          activeContainer = parent;
+          break;
+        }
+        parent = parent.parentElement;
+      }
+    }
+  }
 
-/** 직무명 추출 — 다중 선택자 fallback */
-function extractTitle(): string {
-	const selectors = [
-		'h2.name',
-		'.recruit-title h2',
-		'.job-info h2',
-		'.title-area h2',
-		'h1.title',
-		'.corp_top_box h2',
-		'[class*="title"] h2',
-		'[class*="recruit"] h2',
-	];
+  if (!activeContainer) {
+    console.warn(`[Jasoseol Scraper] Could not find modal container for ec=${ec}`);
+    return null;
+  }
 
-	for (const selector of selectors) {
-		const el = document.querySelector<HTMLElement>(selector);
-		const text = el?.textContent?.trim();
-		if (text) return text;
-	}
+  const text = activeContainer.innerText || '';
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
 
-	// og:title 메타 태그 fallback
-	const ogTitle = document.querySelector<HTMLMetaElement>('meta[property="og:title"]');
-	return ogTitle?.content?.trim() ?? '';
-}
+  if (lines.length < 7) {
+    console.warn('[Jasoseol Scraper] Insufficient text lines in modal.');
+    return null;
+  }
 
-/** 회사명 추출 — 다중 선택자 fallback */
-function extractCompany(): string {
-	const selectors = [
-		'.company-name',
-		'.corp-name',
-		'.company_name',
-		'a[class*="company"]',
-		'.recruit-company',
-		'[class*="company"] a',
-		'[class*="corp"] a',
-	];
+  // 3. Company Extraction (Regex or Line 5)
+  const companyMatch = text.match(/([가-힠a-zA-Z0-9㈜(주)\s&.\-]+)\s*>/);
+  const company = companyMatch ? companyMatch[1].trim() : (lines[5] || '');
 
-	for (const selector of selectors) {
-		const el = document.querySelector<HTMLElement>(selector);
-		const text = el?.textContent?.trim();
-		if (text) return text;
-	}
+  // 4. Title Extraction (Explicitly target Line 6 as requested)
+  const title = lines[6] || '';
 
-	return '';
-}
+  // 5. Deadline Extraction
+  let deadline = '';
+  const allDates = text.match(/(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일/g);
+  if (allDates && allDates.length > 0) {
+    const lastDateStr = allDates[allDates.length - 1];
+    const match = lastDateStr.match(/(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일/);
+    if (match) {
+      const [_, y, m, d] = match;
+      deadline = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+    }
+  }
 
-/** 마감일 추출 — 텍스트 파싱 후 YYYY-MM-DD 형식으로 정규화 */
-function extractDeadline(): string | null {
-	const selectors = [
-		'.deadline',
-		'.period',
-		'.apply-date',
-		'.date-info',
-		'[class*="deadline"]',
-		'[class*="period"]',
-		'[class*="close"]',
-	];
-
-	for (const selector of selectors) {
-		const el = document.querySelector<HTMLElement>(selector);
-		if (el?.textContent) {
-			const parsed = parseDeadline(el.textContent);
-			// parseDeadline이 null이더라도 "상시채용" 텍스트가 포함된 경우 null 반환
-			if (parsed !== undefined) return parsed;
-		}
-	}
-
-	// 페이지 전체에서 마감 관련 텍스트 검색
-	const bodyText = document.body.innerText;
-	const deadlineSection = bodyText.match(/마감[일기한]?\s*[:\：]?\s*([^\n]+)/);
-	if (deadlineSection?.[1]) {
-		return parseDeadline(deadlineSection[1]);
-	}
-
-	return null;
-}
-
-/** 직무 설명 추출 및 정제 */
-function extractDescription(): string {
-	const selectors = [
-		'.recruit-detail',
-		'.job-description',
-		'.content-area',
-		'.recruit-content',
-		'[class*="description"]',
-		'[class*="content"]',
-		'.main-content',
-		'article',
-	];
-
-	for (const selector of selectors) {
-		const el = document.querySelector<HTMLElement>(selector);
-		if (el?.textContent?.trim()) {
-			return sanitizeText(el.textContent);
-		}
-	}
-
-	return '';
+  return {
+    company,
+    title,
+    deadline,
+    url: `https://jasoseol.com/recruit?ec=${ec}`,
+    description: '',
+    site: 'jasoseol'
+  };
 }

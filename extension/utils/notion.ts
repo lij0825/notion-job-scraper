@@ -112,9 +112,9 @@ export async function createJobPage(
 						},
 					}
 				: {}),
-			// 지원 상태 (Select 속성) — 기본값 "지원 예정"
+			// 지원 상태 (Status 속성) — 기본값 "지원 예정"
 			Status: {
-				select: { name: '지원 예정' },
+				status: { name: '지원 예정' },
 			},
 		},
 		// 직무 설명을 페이지 본문 블록으로 추가 (비어있으면 빈 배열)
@@ -148,4 +148,67 @@ export async function validateDatabase(
 		titleProp.length > 0 && titleProp[0]?.plain_text ? titleProp[0].plain_text : '(제목 없음)';
 
 	return { valid: true, name };
+}
+
+/**
+ * Helper to extract 32-char hex ID from URL or raw ID
+ */
+export function parseNotionId(input: string): string {
+  const cleanInput = input.replace(/-/g, '');
+  const match = cleanInput.match(/[a-f0-9]{32}/i);
+  return match ? match[0] : input;
+}
+
+/**
+ * Create an automatic Notion database for job tracking
+ */
+export async function createNotionDatabase(apiKey: string, parentPageId: string): Promise<string> {
+	const parsedParentId = parseNotionId(parentPageId);
+	
+	const response = await fetch('https://api.notion.com/v1/databases', {
+		method: 'POST',
+		headers: {
+			'Authorization': `Bearer ${apiKey}`,
+			'Notion-Version': '2022-06-28',
+			'Content-Type': 'application/json',
+		},
+		body: JSON.stringify({
+			parent: {
+				type: 'page_id',
+				page_id: parsedParentId
+			},
+			title: [
+				{
+					type: 'text',
+					text: { content: '🎯 지원 채용공고 관리' }
+				}
+			],
+			properties: {
+				Title: { title: {} },
+				Company: { rich_text: {} },
+				URL: { url: {} },
+				Deadline: { date: {} },
+				Status: {
+					status: {
+						options: [
+							{ name: '지원 예정', color: 'gray' },
+							{ name: '서류 제출', color: 'blue' },
+							{ name: '서류 합격', color: 'green' },
+							{ name: '면접 진행', color: 'yellow' },
+							{ name: '최종 합격', color: 'green' },
+							{ name: '불합격', color: 'red' }
+						]
+					}
+				}
+			}
+		})
+	});
+
+	if (!response.ok) {
+		const errorBody = await response.text();
+		throw new Error(`Database creation failed: ${errorBody}`);
+	}
+
+	const json = await response.json();
+	return json.id;
 }

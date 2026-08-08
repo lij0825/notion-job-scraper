@@ -45,43 +45,61 @@ const App: React.FC = () => {
 
 			// 인증된 경우 현재 탭 스크래핑 시도
 			setActiveView('scraping');
-			await scrapeCurrentTab();
+			await executeLiveScrape();
 		} catch {
 			setActiveView('settings');
 		}
 	};
 
-	/** 활성 탭의 Content Script에 스크래핑 요청 */
-	const scrapeCurrentTab = async () => {
-		setScrapeError(null);
+	/** 활성 탭의 Content Script에 스크래핑 요청 (Live Scrape) */
+	const executeLiveScrape = async () => {
+		// 1. Instantly reset state to prevent flash of stale data
 		setJobData(null);
+		setScrapeError(null);
 
 		try {
-			const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
-			if (!tab?.id) {
-				setScrapeError('현재 탭 정보를 가져올 수 없습니다.');
+			const [activeTab] = await browser.tabs.query({ active: true, currentWindow: true });
+			if (!activeTab?.id) {
+				setScrapeError('활성화된 탭을 찾을 수 없습니다.');
 				return;
 			}
 
-			const result = await browser.tabs.sendMessage(tab.id, {
+			console.log('[Popup Diagnostic] Requesting SCRAPE from content script...');
+			// 2. Request fresh live scrape from current tab
+			const response = await browser.tabs.sendMessage(activeTab.id, {
 				type: 'SCRAPE',
 			}) as ScrapeResponse;
+			console.log('[Popup Diagnostic] Response received in Popup:', response);
 
-			if (result.success) {
-				setJobData(result.data);
+			if (response?.success && response?.data) {
+				// Active tab has valid modal -> set fresh data
+				setJobData(response.data);
 			} else {
-				setScrapeError(result.error);
+				// No modal open or scrape failed -> clear storage & state
+				setJobData(null);
+				await browser.storage.local.remove('jobData');
+				setScrapeError(response?.error || '채용 공고 데이터를 찾을 수 없습니다.');
 			}
 		} catch (err) {
-			const msg = err instanceof Error ? err.message : String(err);
-			// Content Script가 로드되지 않은 페이지 (채용 사이트가 아닌 경우)
-			if (msg.includes('Could not establish connection') || msg.includes('No tab')) {
-				setScrapeError('이 페이지는 지원하는 채용 사이트가 아닙니다.\n자소설닷컴, 원티드, 사람인, 잡코리아 채용 공고 페이지를 열어주세요.');
-			} else {
-				setScrapeError(`스크래핑 오류: ${msg}`);
-			}
+			console.error('[Popup] Scrape execution error:', err);
+			// Content script not loaded or tab without permission -> purge stale state
+			setJobData(null);
+			await browser.storage.local.remove('jobData');
+			setScrapeError('채용 공고 페이지에서 모달을 연 뒤 다시 시도해 주세요.');
 		}
 	};
+
+	// 탭 변경 및 포커스 시 라이브 스크래핑 재실행
+	useEffect(() => {
+		const handleFocus = () => {
+			if (authStatus.isConnected && activeView === 'scraping') {
+				executeLiveScrape();
+			}
+		};
+
+		window.addEventListener('focus', handleFocus);
+		return () => window.removeEventListener('focus', handleFocus);
+	}, [authStatus.isConnected, activeView]);
 
 	/** Notion에 채용 공고 저장 */
 	const handleSave = async (dataToSave: JobData) => {
@@ -116,7 +134,7 @@ const App: React.FC = () => {
 			setAuthStatus(response.data);
 			if (response.data.isConnected) {
 				setActiveView('scraping');
-				await scrapeCurrentTab();
+				await executeLiveScrape();
 			}
 		}
 
@@ -152,6 +170,23 @@ const App: React.FC = () => {
 
 		if (response.success) {
 			setAuthStatus((prev) => ({ ...prev, databaseId }));
+		}
+
+		return response;
+	};
+
+	/** Database 자동 생성 */
+	const handleCreateDatabase = async (parentPageId: string) => {
+		const response = await sendToBackground({
+			type: 'CREATE_DATABASE',
+			parentPageId,
+		}) as BackgroundResponse<{ name: string }>;
+
+		if (response.success) {
+			const authResponse = await sendToBackground({ type: 'GET_AUTH_STATUS' }) as BackgroundResponse<AuthStatus>;
+			if (authResponse.success) {
+				setAuthStatus(authResponse.data);
+			}
 		}
 
 		return response;
@@ -257,7 +292,7 @@ const App: React.FC = () => {
 						saveStatus={saveStatus}
 						saveError={saveError}
 						onSave={handleSave}
-						onRefresh={scrapeCurrentTab}
+						onRefresh={executeLiveScrape}
 					/>
 				) : (
 					<AuthView
@@ -265,6 +300,7 @@ const App: React.FC = () => {
 						onConnect={handleConnect}
 						onLogout={handleLogout}
 						onSaveDatabaseId={handleSaveDatabaseId}
+						onCreateDatabase={handleCreateDatabase}
 						lastError={authStatus.lastError}
 					/>
 				)}

@@ -7,6 +7,7 @@ interface AuthViewProps {
 	onConnect: () => Promise<BackgroundResponse<AuthStatus>>;
 	onLogout: () => Promise<void>;
 	onSaveDatabaseId: (id: string) => Promise<BackgroundResponse<{ name: string }>>;
+	onCreateDatabase: (parentPageId: string) => Promise<BackgroundResponse<{ name: string }>>;
 	/** 마지막 OAuth 연결 에러 — 미연결 상태에서 표시 */
 	lastError?: ConnectionError;
 }
@@ -25,6 +26,7 @@ const AuthView: React.FC<AuthViewProps> = ({
 	onConnect,
 	onLogout,
 	onSaveDatabaseId,
+	onCreateDatabase,
 	lastError,
 }) => {
 	const [isConnecting, setIsConnecting] = useState(false);
@@ -33,7 +35,13 @@ const AuthView: React.FC<AuthViewProps> = ({
 	const [dbSaveStatus, setDbSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
 	const [dbSaveMessage, setDbSaveMessage] = useState<string | null>(null);
 	const [isLoggingOut, setIsLoggingOut] = useState(false);
+	
+	const [parentPageId, setParentPageId] = useState('');
+	const [dbCreateStatus, setDbCreateStatus] = useState<'idle' | 'creating' | 'success' | 'error'>('idle');
+	const [dbCreateMessage, setDbCreateMessage] = useState<string | null>(null);
+
 	const dbInputId = useId();
+	const parentInputId = useId();
 
 	const handleConnect = async () => {
 		setIsConnecting(true);
@@ -70,6 +78,32 @@ const AuthView: React.FC<AuthViewProps> = ({
 		} else {
 			setDbSaveStatus('error');
 			setDbSaveMessage(response.error);
+		}
+	};
+
+	const handleCreateDatabase = async () => {
+		if (!parentPageId.trim()) {
+			setDbCreateStatus('error');
+			setDbCreateMessage('Parent Page ID 또는 URL을 입력해 주세요.');
+			return;
+		}
+
+		setDbCreateStatus('creating');
+		setDbCreateMessage(null);
+
+		const response = await onCreateDatabase(parentPageId.trim());
+
+		if (response.success) {
+			setDbCreateStatus('success');
+			setDbCreateMessage(`"${response.data.name}" DB가 자동 생성되었습니다.`);
+			setDatabaseId(authStatus.databaseId ?? ''); // 팝업 상태는 App.tsx에서 props 업데이트됨
+			setTimeout(() => {
+				setDbCreateStatus('idle');
+				setDbCreateMessage(null);
+			}, 3000);
+		} else {
+			setDbCreateStatus('error');
+			setDbCreateMessage(response.error);
 		}
 	};
 
@@ -246,6 +280,70 @@ const AuthView: React.FC<AuthViewProps> = ({
 						</div>
 					</div>
 				</details>
+			</section>
+
+			{/* Database 자동 생성 섹션 */}
+			<section className="settings-section">
+				<h3 className="settings-section__title">Database 자동 생성</h3>
+				<p className="settings-section__desc">
+					새로운 DB를 생성할 Notion 부모 페이지의 URL이나 ID를 입력하세요.<br />
+					(반드시 해당 페이지에 통합이 공유되어 있어야 합니다)
+				</p>
+
+				<div className="db-input-group">
+					<label htmlFor={parentInputId} className="sr-only">
+						Parent Page URL / ID
+					</label>
+					<input
+						id={parentInputId}
+						type="text"
+						className={`db-input ${
+							dbCreateStatus === 'error'
+								? 'db-input--error'
+								: dbCreateStatus === 'success'
+								? 'db-input--success'
+								: ''
+						}`}
+						value={parentPageId}
+						onChange={(e) => {
+							setParentPageId(e.target.value);
+							if (dbCreateStatus !== 'idle') {
+								setDbCreateStatus('idle');
+								setDbCreateMessage(null);
+							}
+						}}
+						placeholder="Parent Page URL 붙여넣기"
+						aria-describedby={dbCreateMessage ? 'db-create-msg' : undefined}
+						spellCheck={false}
+					/>
+					<button
+						className={`btn btn--primary btn--sm db-save-btn ${
+							dbCreateStatus === 'creating' ? 'btn--loading' : ''
+						}`}
+						onClick={handleCreateDatabase}
+						disabled={dbCreateStatus === 'creating'}
+						aria-busy={dbCreateStatus === 'creating'}
+						style={{ minWidth: '90px' }}
+					>
+						{dbCreateStatus === 'creating' && (
+							<span className="btn-spinner btn-spinner--sm" aria-hidden="true" />
+						)}
+						{dbCreateStatus === 'creating' ? '' : 'DB 생성'}
+					</button>
+				</div>
+
+				{/* 생성 결과 피드백 */}
+				{dbCreateMessage && (
+					<p
+						id="db-create-msg"
+						className={`db-feedback ${
+							dbCreateStatus === 'success' ? 'db-feedback--success' : 'db-feedback--error'
+						}`}
+						role={dbCreateStatus === 'error' ? 'alert' : 'status'}
+					>
+						{dbCreateStatus === 'success' ? '✅' : '⚠️'} {dbCreateMessage}
+					</p>
+				)}
 			</section>
 		</div>
 	);

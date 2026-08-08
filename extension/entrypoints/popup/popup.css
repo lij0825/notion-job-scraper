@@ -738,6 +738,23 @@ body {
 	color: var(--text-secondary);
 }
 
+.site-chip--link {
+	cursor: pointer;
+	font-family: inherit;
+	outline: none;
+}
+
+.site-chip--link:hover,
+.site-chip--link:focus-visible {
+	background: var(--bg-card-hover);
+	border-color: var(--border-focus);
+	color: var(--text-primary);
+}
+
+.site-chip--link:active {
+	background: var(--border-subtle);
+}
+
 /* ── 인증 뷰 ── */
 .auth-view {
 	padding: 20px 16px;

@@ -1,5 +1,5 @@
 import { browser } from 'wxt/browser';
-import { createJobPage, validateDatabase } from '../../utils/notion';
+import { createJobPage, validateDatabase, createNotionDatabase } from '../../utils/notion';
 import {
 	getStoredData,
 	setStoredData,
@@ -69,6 +69,8 @@ async function handleMessage(message: BackgroundMessage): Promise<BackgroundResp
 			return saveToNotion(message.payload);
 		case 'SAVE_DATABASE_ID':
 			return saveDatabaseId(message.databaseId);
+		case 'CREATE_DATABASE':
+			return handleCreateDatabase(message.parentPageId);
 		case 'DISMISS_ERROR':
 			return dismissConnectionError();
 		default: {
@@ -316,6 +318,35 @@ async function saveDatabaseId(databaseId: string): Promise<BackgroundResponse<{ 
 			};
 		}
 		return { success: false, error: `Database 검증 실패: ${errorMessage}` };
+	}
+}
+
+/**
+ * Creates a new Notion database under the given parent page ID.
+ */
+async function handleCreateDatabase(parentPageId: string): Promise<BackgroundResponse<{ name: string }>> {
+	if (!parentPageId.trim()) {
+		return { success: false, error: 'Parent Page ID를 입력해 주세요.' };
+	}
+
+	const stored = await getStoredData();
+	if (!stored.accessToken) {
+		return { success: false, error: '먼저 Notion에 연결해 주세요.' };
+	}
+
+	try {
+		const newDbId = await createNotionDatabase(stored.accessToken, parentPageId.trim());
+		await updateDatabaseId(newDbId);
+		return { success: true, data: { name: '🎯 지원 채용공고 관리' } };
+	} catch (err) {
+		const errorMessage = err instanceof Error ? err.message : '알 수 없는 오류';
+		if (errorMessage.includes('object_not_found')) {
+			return {
+				success: false,
+				error: 'Parent Page를 찾을 수 없습니다. 올바른 URL/ID인지, 통합이 해당 페이지에 추가되어 있는지 확인해 주세요.',
+			};
+		}
+		return { success: false, error: `Database 생성 실패: ${errorMessage}` };
 	}
 }
 

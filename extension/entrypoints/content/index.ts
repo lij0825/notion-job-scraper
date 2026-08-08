@@ -12,8 +12,8 @@ import type { JobData, SiteKey, ScrapeResponse } from './types';
 export default defineContentScript({
 	// 스크래핑 대상 사이트 URL 패턴
 	matches: [
-		'*://jasoseol.com/recruit/*',
-		'*://*.jasoseol.com/recruit/*',
+		'*://jasoseol.com/*',
+		'*://*.jasoseol.com/*',
 		'*://www.wanted.co.kr/jobdetail/*',
 		'*://www.saramin.co.kr/zf_user/jobs/view*',
 		'*://www.jobkorea.co.kr/Recruit/GI_Read/*',
@@ -31,11 +31,19 @@ export default defineContentScript({
 				const msg = message as { type: string };
 				if (msg.type !== 'SCRAPE') return false;
 
-				// 현재 페이지 스크래핑 실행 후 응답 전송
-				const result = scrapeCurrentPage(siteKey);
-				sendResponse(result);
-				// false 반환 = 동기 응답 (sendResponse 즉시 호출)
-				return false;
+				// 비동기 스크래핑 실행 후 응답 전송
+				console.log('[Content Script Listener] Message RECEIVED in content script:', msg);
+				
+				scrapeCurrentPage(siteKey).then((result) => {
+					console.log('[Content Script Listener] Sending response back to Popup:', result);
+					sendResponse(result);
+				}).catch(err => {
+					console.error('[Content Script Listener] Error during scrapeCurrentPage:', err);
+					sendResponse({ success: false, error: String(err) });
+				});
+				
+				// true 반환 = 비동기 응답 (sendResponse를 나중에 호출함)
+				return true;
 			}
 		);
 
@@ -55,13 +63,13 @@ export default defineContentScript({
  * 현재 페이지를 스크래핑하고 결과를 반환합니다.
  * 스크래핑 실패 시 에러 메시지와 함께 실패 응답을 반환합니다.
  */
-function scrapeCurrentPage(siteKey: SiteKey): ScrapeResponse {
+async function scrapeCurrentPage(siteKey: SiteKey): Promise<ScrapeResponse> {
 	try {
 		let jobData: JobData | null = null;
 
 		switch (siteKey) {
 			case 'jasoseol':
-				jobData = scrapeJasoseol();
+				jobData = await scrapeJasoseol();
 				break;
 			case 'wanted':
 				jobData = scrapeWanted();

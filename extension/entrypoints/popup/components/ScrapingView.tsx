@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { browser } from 'wxt/browser';
 import DatePicker from './DatePicker';
 import type { JobData } from '../../../utils/types';
 
@@ -29,6 +30,14 @@ const FIELD_LABELS: Record<SelectableField, string> = {
 	deadline: '마감일',
 	url: '공고 URL',
 	description: '직무 설명',
+};
+
+/** 클릭 가능한 채용 사이트 URL 매핑 */
+const SITE_URLS: Record<string, string> = {
+	'자소설닷컴': 'https://jasoseol.com',
+	'원티드': 'https://www.wanted.co.kr',
+	'사람인': 'https://www.saramin.co.kr',
+	'잡코리아': 'https://www.jobkorea.co.kr',
 };
 
 /**
@@ -110,6 +119,28 @@ const ScrapingView: React.FC<ScrapingViewProps> = ({
 		await onSave(dataToSave);
 	};
 
+	const handleSiteClick = (url: string) => {
+		browser.tabs.create({ url });
+	};
+
+	const renderSupportedSites = () => (
+		<div className="supported-sites">
+			<p className="supported-sites__label">지원 사이트</p>
+			<div className="supported-sites__list">
+				{Object.entries(SITE_URLS).map(([name, url]) => (
+					<button
+						key={name}
+						className="site-chip site-chip--link"
+						onClick={() => handleSiteClick(url)}
+						title={`${name} 열기`}
+					>
+						{name}
+					</button>
+				))}
+			</div>
+		</div>
+	);
+
 	// 에러 상태 (스크래핑 실패)
 	if (scrapeError && !jobData) {
 		return (
@@ -118,14 +149,7 @@ const ScrapingView: React.FC<ScrapingViewProps> = ({
 					<div className="error-icon" aria-hidden="true">🔍</div>
 					<h2 className="error-title">채용 공고를 찾을 수 없어요</h2>
 					<p className="error-message">{scrapeError}</p>
-					<div className="supported-sites">
-						<p className="supported-sites__label">지원 사이트</p>
-						<div className="supported-sites__list">
-							{['자소설닷컴', '원티드', '사람인', '잡코리아'].map((site) => (
-								<span key={site} className="site-chip">{site}</span>
-							))}
-						</div>
-					</div>
+					{renderSupportedSites()}
 					<button
 						className="btn btn--secondary"
 						onClick={handleRefresh}
@@ -145,6 +169,7 @@ const ScrapingView: React.FC<ScrapingViewProps> = ({
 				<div className="empty-state">
 					<div className="empty-icon" aria-hidden="true">📄</div>
 					<p className="empty-text">채용 공고 페이지를 열고<br />확장 프로그램을 실행하세요.</p>
+					{renderSupportedSites()}
 				</div>
 			</div>
 		);
