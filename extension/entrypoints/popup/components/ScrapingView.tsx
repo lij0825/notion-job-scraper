@@ -1,6 +1,25 @@
 import React, { useEffect, useState } from 'react';
 import { browser } from 'wxt/browser';
 import DatePicker from './DatePicker';
+import { Button } from '../../../components/ui/button';
+import { Input } from '../../../components/ui/input';
+import { Badge } from '../../../components/ui/badge';
+import { Card, CardContent } from '../../../components/ui/card';
+import { Alert, AlertDescription } from '../../../components/ui/alert';
+import {
+	RefreshCw,
+	Sparkles,
+	Building2,
+	Briefcase,
+	Link as LinkIcon,
+	FileText,
+	Calendar,
+	CheckCircle2,
+	AlertCircle,
+	ExternalLink,
+	Loader2,
+	Lock,
+} from 'lucide-react';
 import type { JobData } from '../../../utils/types';
 
 type SaveStatus = 'idle' | 'saving' | 'success' | 'error';
@@ -14,16 +33,11 @@ interface ScrapingViewProps {
 	onRefresh: () => Promise<void>;
 }
 
-/** 선택/해제 가능한 필드 키 */
 type SelectableField = 'title' | 'company' | 'deadline' | 'url' | 'description';
-
-/** 필드 선택 상태 맵 — true이면 Notion에 저장됨 */
 type FieldSelectionMap = Record<SelectableField, boolean>;
 
-/** Notion 페이지 생성 시 반드시 필요한 필드 (체크 해제 불가) */
 const REQUIRED_FIELDS: ReadonlySet<SelectableField> = new Set(['title', 'url']);
 
-/** 필드 레이블 한글 맵 */
 const FIELD_LABELS: Record<SelectableField, string> = {
 	title: '직무명',
 	company: '회사명',
@@ -32,24 +46,13 @@ const FIELD_LABELS: Record<SelectableField, string> = {
 	description: '직무 설명',
 };
 
-/** 클릭 가능한 채용 사이트 URL 매핑 */
 const SITE_URLS: Record<string, string> = {
-	'자소설닷컴': 'https://jasoseol.com',
 	'원티드': 'https://www.wanted.co.kr',
 	'사람인': 'https://www.saramin.co.kr',
 	'잡코리아': 'https://www.jobkorea.co.kr',
+	'자소설닷컴': 'https://jasoseol.com',
 };
 
-/**
- * 스크래핑된 채용 공고를 편집 가능한 폼으로 표시하고,
- * 사용자가 필드를 선택/해제한 뒤 Notion에 저장할 수 있게 합니다.
- *
- * 핵심 원칙:
- *   - 자동 전송 없음 — 사용자가 "선택한 항목 저장" 버튼을 클릭해야만 Notion에 저장
- *   - 모든 필드는 편집 가능 (title, company, url, description은 텍스트 입력)
- *   - deadline은 DatePicker 컴포넌트로 날짜 선택
- *   - title, url은 필수 필드 — 체크박스 해제 불가
- */
 const ScrapingView: React.FC<ScrapingViewProps> = ({
 	jobData,
 	scrapeError,
@@ -58,9 +61,7 @@ const ScrapingView: React.FC<ScrapingViewProps> = ({
 	onSave,
 	onRefresh,
 }) => {
-	// 사용자가 수정할 수 있는 로컬 사본
 	const [editableData, setEditableData] = useState<JobData | null>(null);
-	// 각 필드의 선택/해제 상태
 	const [selectedFields, setSelectedFields] = useState<FieldSelectionMap>({
 		title: true,
 		company: true,
@@ -70,11 +71,9 @@ const ScrapingView: React.FC<ScrapingViewProps> = ({
 	});
 	const [isRefreshing, setIsRefreshing] = useState(false);
 
-	// jobData가 변경되면 편집 가능 사본을 동기화
 	useEffect(() => {
 		if (jobData) {
 			setEditableData({ ...jobData });
-			// 새 데이터가 들어오면 모든 필드를 다시 선택 상태로 초기화
 			setSelectedFields({
 				title: true,
 				company: true,
@@ -85,14 +84,11 @@ const ScrapingView: React.FC<ScrapingViewProps> = ({
 		}
 	}, [jobData]);
 
-	/** 단일 필드 값 업데이트 핸들러 */
 	const updateField = <K extends keyof JobData>(field: K, value: JobData[K]) => {
 		setEditableData((prev) => (prev ? { ...prev, [field]: value } : prev));
 	};
 
-	/** 필드 선택/해제 토글 */
 	const toggleField = (field: SelectableField) => {
-		// 필수 필드는 해제 불가
 		if (REQUIRED_FIELDS.has(field)) return;
 		setSelectedFields((prev) => ({ ...prev, [field]: !prev[field] }));
 	};
@@ -103,7 +99,6 @@ const ScrapingView: React.FC<ScrapingViewProps> = ({
 		setIsRefreshing(false);
 	};
 
-	/** 선택된 필드만 포함하여 Notion에 저장 */
 	const handleSave = async () => {
 		if (!editableData) return;
 
@@ -124,58 +119,67 @@ const ScrapingView: React.FC<ScrapingViewProps> = ({
 	};
 
 	const renderSupportedSites = () => (
-		<div className="supported-sites">
-			<p className="supported-sites__label">지원 사이트</p>
-			<div className="supported-sites__list">
+		<div className="space-y-2 pt-2 text-center">
+			<p className="text-[11px] text-muted-foreground font-medium">지원 사이트 바로가기</p>
+			<div className="flex flex-wrap justify-center gap-1.5">
 				{Object.entries(SITE_URLS).map(([name, url]) => (
-					<button
+					<Button
 						key={name}
-						className="site-chip site-chip--link"
+						variant="outline"
+						size="sm"
+						className="h-7 text-xs gap-1 py-0 px-2.5 bg-card/60 hover:bg-accent"
 						onClick={() => handleSiteClick(url)}
-						title={`${name} 열기`}
 					>
-						{name}
-					</button>
+						<span>{name}</span>
+						<ExternalLink className="w-3 h-3 text-muted-foreground" />
+					</Button>
 				))}
 			</div>
 		</div>
 	);
 
-	// 에러 상태 (스크래핑 실패)
 	if (scrapeError && !jobData) {
 		return (
-			<div className="scraping-view">
-				<div className="error-state">
-					<div className="error-icon" aria-hidden="true">🔍</div>
-					<h2 className="error-title">채용 공고를 찾을 수 없어요</h2>
-					<p className="error-message">{scrapeError}</p>
-					{renderSupportedSites()}
-					<button
-						className="btn btn--secondary"
-						onClick={handleRefresh}
-						disabled={isRefreshing}
-					>
-						{isRefreshing ? '새로고침 중...' : '🔄 다시 시도'}
-					</button>
+			<div className="flex flex-col items-center justify-center p-6 space-y-4 text-center min-h-[460px]">
+				<div className="w-12 h-12 rounded-2xl bg-destructive/10 text-destructive flex items-center justify-center">
+					<AlertCircle className="w-6 h-6" />
 				</div>
+				<div className="space-y-1">
+					<h3 className="text-sm font-semibold">채용 공고를 찾을 수 없습니다</h3>
+					<p className="text-xs text-muted-foreground max-w-[280px]">{scrapeError}</p>
+				</div>
+				{renderSupportedSites()}
+				<Button
+					variant="secondary"
+					size="sm"
+					onClick={handleRefresh}
+					disabled={isRefreshing}
+					className="gap-1.5 mt-2"
+				>
+					<RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+					<span>다시 시도</span>
+				</Button>
 			</div>
 		);
 	}
 
-	// 데이터 없는 경우 (초기 로딩)
 	if (!jobData || !editableData) {
 		return (
-			<div className="scraping-view">
-				<div className="empty-state">
-					<div className="empty-icon" aria-hidden="true">📄</div>
-					<p className="empty-text">채용 공고 페이지를 열고<br />확장 프로그램을 실행하세요.</p>
-					{renderSupportedSites()}
+			<div className="flex flex-col items-center justify-center p-6 space-y-4 text-center min-h-[460px]">
+				<div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
+					<Briefcase className="w-6 h-6" />
 				</div>
+				<div className="space-y-1">
+					<h3 className="text-sm font-semibold">채용 공고를 열어주세요</h3>
+					<p className="text-xs text-muted-foreground max-w-[280px]">
+						원티드, 사람인, 잡코리아, 자소설닷컴 공고 페이지에서 확장 프로그램을 실행하세요.
+					</p>
+				</div>
+				{renderSupportedSites()}
 			</div>
 		);
 	}
 
-	// 사이트 레이블 맵
 	const siteLabels: Record<string, string> = {
 		jasoseol: '자소설닷컴',
 		wanted: '원티드',
@@ -184,195 +188,189 @@ const ScrapingView: React.FC<ScrapingViewProps> = ({
 		unknown: '알 수 없음',
 	};
 
-	/** 상시채용 여부 */
-	const isAlwaysOpen = editableData.deadline === null;
-
-	/** 선택된 (저장될) 필드 개수 */
 	const selectedCount = Object.values(selectedFields).filter(Boolean).length;
 	const totalCount = Object.keys(selectedFields).length;
 
 	return (
-		<div className="scraping-view">
-			{/* 사이트 뱃지 + 새로고침 */}
-			<div className="scraping-view__toolbar">
-				<span className="site-badge">{siteLabels[editableData.site] ?? editableData.site}</span>
-				<div className="toolbar-actions">
-					<span className="field-count">{selectedCount}/{totalCount} 필드 선택</span>
-					<button
-						className="icon-btn"
-						onClick={handleRefresh}
-						disabled={isRefreshing}
-						title="다시 스크래핑"
-						aria-label="채용 공고 다시 스크래핑"
-					>
-						{isRefreshing ? '⏳' : '🔄'}
-					</button>
+		<div className="flex flex-col p-4 space-y-3.5">
+			{/* 상단 툴바 */}
+			<div className="flex items-center justify-between">
+				<div className="flex items-center gap-1.5">
+					<Badge variant="default" className="gap-1 py-0.5 px-2 text-xs">
+						<Sparkles className="w-3 h-3" />
+						<span>{siteLabels[editableData.site] ?? editableData.site}</span>
+					</Badge>
+					<span className="text-[11px] text-muted-foreground">
+						{selectedCount}/{totalCount} 필드 선택됨
+					</span>
 				</div>
+				<Button
+					variant="ghost"
+					size="icon"
+					className="h-7 w-7 text-muted-foreground hover:text-foreground"
+					onClick={handleRefresh}
+					disabled={isRefreshing}
+					title="다시 스크래핑"
+				>
+					<RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+				</Button>
 			</div>
 
-			{/* 편집 가능한 필드 폼 */}
-			<div className="field-form">
-				{/* 직무명 (필수) */}
-				<div className="field-row">
-					<label className="field-checkbox-label">
-						<input
-							type="checkbox"
-							className="field-checkbox"
-							checked={selectedFields.title}
-							disabled
-							aria-label="직무명 선택 (필수)"
+			{/* 필드 목록 카드 */}
+			<Card className="border-border/60">
+				<CardContent className="p-3 space-y-3">
+					{/* 직무명 (필수) */}
+					<div className="space-y-1">
+						<div className="flex items-center justify-between text-xs">
+							<label className="flex items-center gap-1.5 font-medium">
+								<Briefcase className="w-3.5 h-3.5 text-primary" />
+								<span>{FIELD_LABELS.title}</span>
+								<Lock className="w-2.5 h-2.5 text-muted-foreground" />
+							</label>
+							<Badge variant="outline" className="text-[10px] py-0 px-1">필수</Badge>
+						</div>
+						<Input
+							type="text"
+							className="h-8 text-xs bg-muted/20"
+							value={editableData.title}
+							onChange={(e) => updateField('title', e.target.value)}
+							placeholder="직무명 입력"
+							spellCheck={false}
 						/>
-						<span className="field-checkbox-custom field-checkbox-custom--locked" />
-						<span className="field-label">
-							{FIELD_LABELS.title}
-							<span className="field-required" title="필수 항목">*</span>
-						</span>
-					</label>
-					<input
-						type="text"
-						className="field-input"
-						value={editableData.title}
-						onChange={(e) => updateField('title', e.target.value)}
-						placeholder="직무명 입력"
-						spellCheck={false}
-					/>
-				</div>
+					</div>
 
-				{/* 회사명 (선택) */}
-				<div className={`field-row ${!selectedFields.company ? 'field-row--disabled' : ''}`}>
-					<label className="field-checkbox-label">
-						<input
-							type="checkbox"
-							className="field-checkbox"
-							checked={selectedFields.company}
-							onChange={() => toggleField('company')}
-							aria-label="회사명 포함 여부"
+					{/* 회사명 (선택) */}
+					<div className={`space-y-1 ${!selectedFields.company ? 'opacity-50' : ''}`}>
+						<div className="flex items-center justify-between text-xs">
+							<label className="flex items-center gap-1.5 font-medium cursor-pointer">
+								<input
+									type="checkbox"
+									className="rounded border-border bg-background text-primary focus:ring-primary w-3.5 h-3.5 cursor-pointer"
+									checked={selectedFields.company}
+									onChange={() => toggleField('company')}
+								/>
+								<Building2 className="w-3.5 h-3.5 text-primary" />
+								<span>{FIELD_LABELS.company}</span>
+							</label>
+						</div>
+						<Input
+							type="text"
+							className="h-8 text-xs bg-muted/20"
+							value={editableData.company}
+							onChange={(e) => updateField('company', e.target.value)}
+							placeholder="회사명 입력"
+							disabled={!selectedFields.company}
+							spellCheck={false}
 						/>
-						<span className="field-checkbox-custom" />
-						<span className="field-label">{FIELD_LABELS.company}</span>
-					</label>
-					<input
-						type="text"
-						className="field-input"
-						value={editableData.company}
-						onChange={(e) => updateField('company', e.target.value)}
-						placeholder="회사명 입력"
-						disabled={!selectedFields.company}
-						spellCheck={false}
-					/>
-				</div>
+					</div>
 
-				{/* 마감일 (선택) */}
-				<div className={`field-row field-row--deadline ${!selectedFields.deadline ? 'field-row--disabled' : ''}`}>
-					<label className="field-checkbox-label">
-						<input
-							type="checkbox"
-							className="field-checkbox"
-							checked={selectedFields.deadline}
-							onChange={() => toggleField('deadline')}
-							aria-label="마감일 포함 여부"
-						/>
-						<span className="field-checkbox-custom" />
-						<span className="field-label">
-							{FIELD_LABELS.deadline}
-							{isAlwaysOpen && <span className="field-badge-inline">상시채용</span>}
-						</span>
-					</label>
-					{selectedFields.deadline && (
-						<div className="field-deadline-picker">
+					{/* 마감일 (선택) */}
+					<div className={`space-y-1 ${!selectedFields.deadline ? 'opacity-50' : ''}`}>
+						<div className="flex items-center justify-between text-xs">
+							<label className="flex items-center gap-1.5 font-medium cursor-pointer">
+								<input
+									type="checkbox"
+									className="rounded border-border bg-background text-primary focus:ring-primary w-3.5 h-3.5 cursor-pointer"
+									checked={selectedFields.deadline}
+									onChange={() => toggleField('deadline')}
+								/>
+								<Calendar className="w-3.5 h-3.5 text-primary" />
+								<span>{FIELD_LABELS.deadline}</span>
+							</label>
+						</div>
+						{selectedFields.deadline ? (
 							<DatePicker
 								value={editableData.deadline}
 								onChange={(val) => updateField('deadline', val)}
-								label={isAlwaysOpen ? '마감일 직접 입력' : '마감일 변경'}
+								label="마감일 설정"
 							/>
+						) : (
+							<p className="text-[11px] text-muted-foreground italic">저장 시 마감일이 제외됩니다.</p>
+						)}
+					</div>
+
+					{/* 공고 URL (필수) */}
+					<div className="space-y-1">
+						<div className="flex items-center justify-between text-xs">
+							<label className="flex items-center gap-1.5 font-medium">
+								<LinkIcon className="w-3.5 h-3.5 text-primary" />
+								<span>{FIELD_LABELS.url}</span>
+								<Lock className="w-2.5 h-2.5 text-muted-foreground" />
+							</label>
+							<Badge variant="outline" className="text-[10px] py-0 px-1">필수</Badge>
 						</div>
-					)}
-					{!selectedFields.deadline && (
-						<p className="field-excluded-hint">저장 시 마감일이 제외됩니다</p>
-					)}
-				</div>
-
-				{/* 공고 URL (필수) */}
-				<div className="field-row">
-					<label className="field-checkbox-label">
-						<input
-							type="checkbox"
-							className="field-checkbox"
-							checked={selectedFields.url}
-							disabled
-							aria-label="공고 URL 선택 (필수)"
-						/>
-						<span className="field-checkbox-custom field-checkbox-custom--locked" />
-						<span className="field-label">
-							{FIELD_LABELS.url}
-							<span className="field-required" title="필수 항목">*</span>
-						</span>
-					</label>
-					<input
-						type="text"
-						className="field-input field-input--url"
-						value={editableData.url}
-						onChange={(e) => updateField('url', e.target.value)}
-						placeholder="URL 입력"
-						spellCheck={false}
-					/>
-				</div>
-
-				{/* 직무 설명 (선택) */}
-				<div className={`field-row field-row--description ${!selectedFields.description ? 'field-row--disabled' : ''}`}>
-					<label className="field-checkbox-label">
-						<input
-							type="checkbox"
-							className="field-checkbox"
-							checked={selectedFields.description}
-							onChange={() => toggleField('description')}
-							aria-label="직무 설명 포함 여부"
-						/>
-						<span className="field-checkbox-custom" />
-						<span className="field-label">{FIELD_LABELS.description}</span>
-					</label>
-					{selectedFields.description ? (
-						<textarea
-							className="field-textarea"
-							value={editableData.description}
-							onChange={(e) => updateField('description', e.target.value)}
-							placeholder="직무 설명 입력"
-							rows={4}
+						<Input
+							type="text"
+							className="h-8 text-xs bg-muted/20"
+							value={editableData.url}
+							onChange={(e) => updateField('url', e.target.value)}
+							placeholder="공고 URL 입력"
 							spellCheck={false}
 						/>
-					) : (
-						<p className="field-excluded-hint">저장 시 직무 설명이 제외됩니다</p>
-					)}
-				</div>
-			</div>
+					</div>
 
-			{/* 저장 상태 메시지 */}
+					{/* 직무 설명 (선택) */}
+					<div className={`space-y-1 ${!selectedFields.description ? 'opacity-50' : ''}`}>
+						<div className="flex items-center justify-between text-xs">
+							<label className="flex items-center gap-1.5 font-medium cursor-pointer">
+								<input
+									type="checkbox"
+									className="rounded border-border bg-background text-primary focus:ring-primary w-3.5 h-3.5 cursor-pointer"
+									checked={selectedFields.description}
+									onChange={() => toggleField('description')}
+								/>
+								<FileText className="w-3.5 h-3.5 text-primary" />
+								<span>{FIELD_LABELS.description}</span>
+							</label>
+						</div>
+						{selectedFields.description ? (
+							<textarea
+								className="flex min-h-[70px] w-full rounded-md border border-input bg-muted/20 px-3 py-1.5 text-xs shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+								value={editableData.description}
+								onChange={(e) => updateField('description', e.target.value)}
+								placeholder="직무 설명 입력"
+								rows={3}
+								spellCheck={false}
+							/>
+						) : (
+							<p className="text-[11px] text-muted-foreground italic">저장 시 직무 설명이 제외됩니다.</p>
+						)}
+					</div>
+				</CardContent>
+			</Card>
+
+			{/* 피드백 메시지 */}
 			{saveStatus === 'success' && (
-				<div className="save-feedback save-feedback--success" role="status">
-					<span aria-hidden="true">✅</span> Notion에 성공적으로 저장되었습니다!
-				</div>
+				<Alert variant="success" className="py-2">
+					<CheckCircle2 className="w-4 h-4" />
+					<AlertDescription className="text-xs font-medium ml-1">
+						Notion에 성공적으로 저장되었습니다!
+					</AlertDescription>
+				</Alert>
 			)}
 
 			{saveStatus === 'error' && saveError && (
-				<div className="save-feedback save-feedback--error" role="alert">
-					<span aria-hidden="true">❌</span> {saveError}
-				</div>
+				<Alert variant="destructive" className="py-2">
+					<AlertCircle className="w-4 h-4" />
+					<AlertDescription className="text-xs font-medium ml-1">
+						{saveError}
+					</AlertDescription>
+				</Alert>
 			)}
 
 			{/* 저장 버튼 */}
-			<button
-				className={`btn btn--primary save-btn ${saveStatus === 'saving' ? 'btn--loading' : ''}`}
+			<Button
+				className="w-full py-5 font-semibold text-sm shadow-md gap-2"
 				onClick={handleSave}
 				disabled={saveStatus === 'saving' || saveStatus === 'success'}
-				aria-busy={saveStatus === 'saving'}
 			>
-				{saveStatus === 'saving' && <span className="btn-spinner" aria-hidden="true" />}
+				{saveStatus === 'saving' && <Loader2 className="w-4 h-4 animate-spin" />}
 				{saveStatus === 'success'
-					? '✅ 저장 완료'
+					? '저장 완료'
 					: saveStatus === 'saving'
-						? '저장 중...'
-						: `📥 선택한 항목 Notion에 저장 (${selectedCount})`}
-			</button>
+						? 'Notion에 저장 중...'
+						: `선택한 항목 Notion에 저장 (${selectedCount})`}
+			</Button>
 		</div>
 	);
 };

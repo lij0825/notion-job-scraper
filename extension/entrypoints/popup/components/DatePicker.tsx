@@ -1,19 +1,16 @@
 import React, { useId } from 'react';
+import { Input } from '../../../components/ui/input';
+import { Button } from '../../../components/ui/button';
+import { Badge } from '../../../components/ui/badge';
+import { Calendar, X } from 'lucide-react';
 
 interface DatePickerProps {
-	/** YYYY-MM-DD 형식의 날짜 값 또는 null (미설정) */
 	value: string | null;
 	onChange: (value: string | null) => void;
 	label?: string;
-	/** 선택 가능한 최소 날짜 (기본: 오늘) */
 	minDate?: string;
 }
 
-/**
- * 마감일 날짜 선택 컴포넌트
- * deadline이 null(상시채용)인 경우 팝업에서 수동으로 날짜를 선택할 수 있습니다.
- * "날짜 없이 저장" 버튼으로 다시 null로 되돌릴 수 있습니다.
- */
 const DatePicker: React.FC<DatePickerProps> = ({
 	value,
 	onChange,
@@ -21,8 +18,6 @@ const DatePicker: React.FC<DatePickerProps> = ({
 	minDate,
 }) => {
 	const inputId = useId();
-
-	// 최소 날짜: 제공되지 않으면 오늘 날짜를 기본값으로 사용
 	const today = new Date().toISOString().split('T')[0];
 	const effectiveMinDate = minDate ?? today;
 
@@ -35,47 +30,49 @@ const DatePicker: React.FC<DatePickerProps> = ({
 	};
 
 	return (
-		<div className="date-picker">
-			<label htmlFor={inputId} className="date-picker__label">
-				<span className="date-picker__icon" aria-hidden="true">📅</span>
-				{label}
-				<span className="date-picker__badge">상시채용</span>
-			</label>
+		<div className="space-y-1.5 w-full">
+			<div className="flex items-center justify-between text-xs text-muted-foreground">
+				<label htmlFor={inputId} className="flex items-center gap-1.5 font-medium text-foreground">
+					<Calendar className="w-3.5 h-3.5 text-primary" />
+					{label}
+				</label>
+				<Badge variant="outline" className="text-[10px] py-0 px-1.5">상시채용 지원</Badge>
+			</div>
 
-			<div className="date-picker__controls">
-				<input
+			<div className="flex items-center gap-1.5">
+				<Input
 					id={inputId}
 					type="date"
-					className="date-picker__input"
+					className="h-8 text-xs bg-muted/30"
 					value={value ?? ''}
 					min={effectiveMinDate}
 					onChange={handleChange}
 					aria-label="지원 마감일 선택"
 				/>
-
 				{value && (
-					<button
+					<Button
 						type="button"
-						className="date-picker__clear-btn"
+						variant="ghost"
+						size="icon"
+						className="h-8 w-8 text-muted-foreground hover:text-foreground shrink-0"
 						onClick={handleClear}
 						title="날짜 지우기"
 						aria-label="선택한 날짜 지우기"
 					>
-						✕
-					</button>
+						<X className="w-3.5 h-3.5" />
+					</Button>
 				)}
 			</div>
 
-			<p className="date-picker__hint">
+			<p className="text-[11px] text-muted-foreground">
 				{value
-					? `선택한 마감일: ${formatDisplayDate(value)}`
-					: 'Notion에는 마감일 없이 저장됩니다.'}
+					? `선택된 마감일: ${formatDisplayDate(value)}`
+					: '마감일 없이 상시 채용으로 저장됩니다.'}
 			</p>
 		</div>
 	);
 };
 
-/** YYYY-MM-DD를 사람이 읽기 쉬운 형식으로 변환합니다. */
 function formatDisplayDate(dateStr: string): string {
 	try {
 		const [year, month, day] = dateStr.split('-');

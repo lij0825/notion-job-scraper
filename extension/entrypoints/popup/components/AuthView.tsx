@@ -1,5 +1,25 @@
 import React, { useId, useState } from 'react';
 import StatusBadge from './StatusBadge';
+import { Button } from '../../../components/ui/button';
+import { Input } from '../../../components/ui/input';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from '../../../components/ui/alert';
+import { Separator } from '../../../components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs';
+import {
+	Link2,
+	LogOut,
+	CheckCircle2,
+	AlertTriangle,
+	Database,
+	PlusCircle,
+	Sparkles,
+	HelpCircle,
+	Loader2,
+	ShieldCheck,
+	Calendar,
+	SlidersHorizontal,
+} from 'lucide-react';
 import type { AuthStatus, BackgroundResponse, ConnectionError } from '../../../utils/types';
 
 interface AuthViewProps {
@@ -8,19 +28,9 @@ interface AuthViewProps {
 	onLogout: () => Promise<void>;
 	onSaveDatabaseId: (id: string) => Promise<BackgroundResponse<{ name: string }>>;
 	onCreateDatabase: (parentPageId: string) => Promise<BackgroundResponse<{ name: string }>>;
-	/** 마지막 OAuth 연결 에러 — 미연결 상태에서 표시 */
 	lastError?: ConnectionError;
 }
 
-/**
- * 인증/설정 뷰 컴포넌트
- *
- * 미연결 상태: Notion 연결 버튼 + 안내 메시지
- * 연결 상태:
- *   - 워크스페이스 정보 + 연결 상태 뱃지
- *   - Database ID 입력 필드 (저장 + 검증)
- *   - 로그아웃 버튼
- */
 const AuthView: React.FC<AuthViewProps> = ({
 	authStatus,
 	onConnect,
@@ -35,7 +45,7 @@ const AuthView: React.FC<AuthViewProps> = ({
 	const [dbSaveStatus, setDbSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
 	const [dbSaveMessage, setDbSaveMessage] = useState<string | null>(null);
 	const [isLoggingOut, setIsLoggingOut] = useState(false);
-	
+
 	const [parentPageId, setParentPageId] = useState('');
 	const [dbCreateStatus, setDbCreateStatus] = useState<'idle' | 'creating' | 'success' | 'error'>('idle');
 	const [dbCreateMessage, setDbCreateMessage] = useState<string | null>(null);
@@ -70,7 +80,7 @@ const AuthView: React.FC<AuthViewProps> = ({
 
 		if (response.success) {
 			setDbSaveStatus('success');
-			setDbSaveMessage(`"${response.data.name}" DB가 연결되었습니다.`);
+			setDbSaveMessage(`"${response.data.name}" 데이터베이스가 연결되었습니다.`);
 			setTimeout(() => {
 				setDbSaveStatus('idle');
 				setDbSaveMessage(null);
@@ -95,8 +105,8 @@ const AuthView: React.FC<AuthViewProps> = ({
 
 		if (response.success) {
 			setDbCreateStatus('success');
-			setDbCreateMessage(`"${response.data.name}" DB가 자동 생성되었습니다.`);
-			setDatabaseId(authStatus.databaseId ?? ''); // 팝업 상태는 App.tsx에서 props 업데이트됨
+			setDbCreateMessage(`"${response.data.name}" 데이터베이스가 생성되었습니다.`);
+			setDatabaseId(authStatus.databaseId ?? '');
 			setTimeout(() => {
 				setDbCreateStatus('idle');
 				setDbCreateMessage(null);
@@ -116,235 +126,234 @@ const AuthView: React.FC<AuthViewProps> = ({
 	// 미연결 상태 UI
 	if (!authStatus.isConnected) {
 		return (
-			<div className="auth-view">
-				<div className="auth-hero">
-					<div className="auth-hero__icon" aria-hidden="true">🔗</div>
-					<h2 className="auth-hero__title">Notion에 연결하세요</h2>
-					<p className="auth-hero__desc">
-						Notion 계정을 연결하면 채용 공고를<br />
-						원하는 정보만 선택하여 저장할 수 있습니다.
+			<div className="flex flex-col p-4 space-y-4">
+				<div className="flex flex-col items-center text-center space-y-2 py-4">
+					<div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-inner">
+						<Link2 className="w-6 h-6" />
+					</div>
+					<h2 className="text-lg font-bold tracking-tight">Notion에 연결하세요</h2>
+					<p className="text-xs text-muted-foreground max-w-[280px]">
+						원클릭으로 채용 공고를 Notion 데이터베이스에 정리하고 동기화할 수 있습니다.
 					</p>
 				</div>
 
-				{/* 이전 OAuth 실패 이력 (storage.local에서 조회) */}
 				{lastError && !connectError && (
-					<div className="error-banner error-banner--persistent" role="alert">
-						<span aria-hidden="true">⚠️</span>
-						<div>
-							<span>{lastError.message}</span>
-							<time className="error-banner__time">
-								{new Date(lastError.occurredAt).toLocaleString()}
-							</time>
-						</div>
-					</div>
+					<Alert variant="destructive">
+						<AlertTriangle className="w-4 h-4" />
+						<AlertTitle>연결 실패 이력</AlertTitle>
+						<AlertDescription className="text-[11px]">
+							{lastError.message}
+						</AlertDescription>
+					</Alert>
 				)}
 
 				{connectError && (
-					<div className="error-banner" role="alert">
-						<span aria-hidden="true">⚠️</span> {connectError}
-					</div>
+					<Alert variant="destructive">
+						<AlertTriangle className="w-4 h-4" />
+						<AlertTitle>인증 오류</AlertTitle>
+						<AlertDescription className="text-[11px]">{connectError}</AlertDescription>
+					</Alert>
 				)}
 
-				<button
+				<Button
 					id="connect-notion-btn"
-					className={`btn btn--primary btn--full ${isConnecting ? 'btn--loading' : ''}`}
+					className="w-full py-5 font-semibold text-sm shadow-lg gap-2"
 					onClick={handleConnect}
 					disabled={isConnecting}
-					aria-busy={isConnecting}
 				>
-					{isConnecting && <span className="btn-spinner" aria-hidden="true" />}
-					{isConnecting ? '연결 중...' : '🔑 Notion으로 연결하기'}
-				</button>
+					{isConnecting ? (
+						<>
+							<Loader2 className="w-4 h-4 animate-spin" />
+							<span>Notion 연결 중...</span>
+						</>
+					) : (
+						<>
+							<Sparkles className="w-4 h-4" />
+							<span>Notion으로 연결하기</span>
+						</>
+					)}
+				</Button>
 
-				<div className="auth-features">
-					<div className="feature-item">
-						<span className="feature-icon" aria-hidden="true">✨</span>
-						<span>4개 채용 사이트 원클릭 스크래핑</span>
+				<Separator />
+
+				<div className="grid grid-cols-2 gap-2 text-xs">
+					<div className="flex items-center gap-2 p-2.5 rounded-lg bg-card border">
+						<Sparkles className="w-4 h-4 text-primary shrink-0" />
+						<span className="text-[11px] leading-tight">4개 사이트 원클릭 스크래핑</span>
 					</div>
-					<div className="feature-item">
-						<span className="feature-icon" aria-hidden="true">✏️</span>
-						<span>필드별 편집·선택 후 저장</span>
+					<div className="flex items-center gap-2 p-2.5 rounded-lg bg-card border">
+						<SlidersHorizontal className="w-4 h-4 text-primary shrink-0" />
+						<span className="text-[11px] leading-tight">필드별 선택 및 직접 수정</span>
 					</div>
-					<div className="feature-item">
-						<span className="feature-icon" aria-hidden="true">📅</span>
-						<span>마감일 캘린더 자동 동기화</span>
+					<div className="flex items-center gap-2 p-2.5 rounded-lg bg-card border">
+						<Calendar className="w-4 h-4 text-primary shrink-0" />
+						<span className="text-[11px] leading-tight">마감일 캘린더 자동 동기화</span>
 					</div>
-					<div className="feature-item">
-						<span className="feature-icon" aria-hidden="true">🔒</span>
-						<span>안전한 OAuth 2.0 인증</span>
+					<div className="flex items-center gap-2 p-2.5 rounded-lg bg-card border">
+						<ShieldCheck className="w-4 h-4 text-primary shrink-0" />
+						<span className="text-[11px] leading-tight">안전한 OAuth 2.0 인증</span>
 					</div>
 				</div>
 			</div>
 		);
 	}
 
-	// 연결된 상태 UI (설정 패널)
+	// 연결된 상태 (설정 화면)
 	return (
-		<div className="auth-view auth-view--connected">
-			{/* 연결 상태 섹션 */}
-			<section className="settings-section">
-				<h3 className="settings-section__title">연결 상태</h3>
-				<div className="workspace-card">
-					<div className="workspace-card__info">
-						<StatusBadge
-							isConnected={authStatus.isConnected}
-							workspaceName={authStatus.workspaceName}
-						/>
-					</div>
-					<button
-						className="btn btn--danger-ghost btn--sm"
+		<div className="flex flex-col p-4 space-y-4">
+			{/* 연결 상태 카드 */}
+			<Card className="border-border/60">
+				<CardHeader className="p-3 pb-2 flex-row items-center justify-between space-y-0">
+					<CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+						Notion 워크스페이스
+					</CardTitle>
+					<Button
+						variant="ghost"
+						size="sm"
+						className="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10 gap-1 px-2"
 						onClick={handleLogout}
 						disabled={isLoggingOut}
-						aria-busy={isLoggingOut}
 					>
-						{isLoggingOut ? '로그아웃 중...' : '로그아웃'}
-					</button>
+						{isLoggingOut ? <Loader2 className="w-3 h-3 animate-spin" /> : <LogOut className="w-3 h-3" />}
+						<span>로그아웃</span>
+					</Button>
+				</CardHeader>
+				<CardContent className="p-3 pt-0">
+					<StatusBadge isConnected={authStatus.isConnected} workspaceName={authStatus.workspaceName} />
+				</CardContent>
+			</Card>
+
+			{/* Database 설정 탭 */}
+			<Tabs defaultValue="existing" className="w-full">
+				<TabsList className="grid w-full grid-cols-2">
+					<TabsTrigger value="existing" className="gap-1 text-xs">
+						<Database className="w-3.5 h-3.5" />
+						<span>기존 DB 연결</span>
+					</TabsTrigger>
+					<TabsTrigger value="create" className="gap-1 text-xs">
+						<PlusCircle className="w-3.5 h-3.5" />
+						<span>새 DB 생성</span>
+					</TabsTrigger>
+				</TabsList>
+
+				<TabsContent value="existing" className="space-y-3 mt-3">
+					<Card>
+						<CardHeader className="p-3">
+							<CardTitle className="text-xs font-medium">Database ID 또는 URL</CardTitle>
+							<CardDescription className="text-[11px]">
+								저장할 Notion 데이터베이스의 ID나 주소창 URL을 입력하세요.
+							</CardDescription>
+						</CardHeader>
+						<CardContent className="p-3 pt-0 space-y-2">
+							<div className="flex items-center gap-1.5">
+								<Input
+									id={dbInputId}
+									type="text"
+									className="h-8 text-xs bg-muted/20"
+									value={databaseId}
+									onChange={(e) => {
+										setDatabaseId(e.target.value);
+										if (dbSaveStatus !== 'idle') {
+											setDbSaveStatus('idle');
+											setDbSaveMessage(null);
+										}
+									}}
+									placeholder="Database ID 또는 URL"
+									spellCheck={false}
+								/>
+								<Button
+									size="sm"
+									className="h-8 px-3 text-xs shrink-0"
+									onClick={handleSaveDatabaseId}
+									disabled={dbSaveStatus === 'saving'}
+								>
+									{dbSaveStatus === 'saving' ? (
+										<Loader2 className="w-3.5 h-3.5 animate-spin" />
+									) : (
+										'저장'
+									)}
+								</Button>
+							</div>
+
+							{dbSaveMessage && (
+								<Alert variant={dbSaveStatus === 'success' ? 'success' : 'destructive'} className="py-1.5 px-2.5">
+									{dbSaveStatus === 'success' ? (
+										<CheckCircle2 className="w-3.5 h-3.5" />
+									) : (
+										<AlertTriangle className="w-3.5 h-3.5" />
+									)}
+									<AlertDescription className="text-[11px] font-medium ml-1">
+										{dbSaveMessage}
+									</AlertDescription>
+								</Alert>
+							)}
+						</CardContent>
+					</Card>
+				</TabsContent>
+
+				<TabsContent value="create" className="space-y-3 mt-3">
+					<Card>
+						<CardHeader className="p-3">
+							<CardTitle className="text-xs font-medium">부모 페이지 URL 또는 ID</CardTitle>
+							<CardDescription className="text-[11px]">
+								채용 공고 전용 데이터베이스를 생성할 Notion 상위 페이지를 지정하세요.
+							</CardDescription>
+						</CardHeader>
+						<CardContent className="p-3 pt-0 space-y-2">
+							<div className="flex items-center gap-1.5">
+								<Input
+									id={parentInputId}
+									type="text"
+									className="h-8 text-xs bg-muted/20"
+									value={parentPageId}
+									onChange={(e) => {
+										setParentPageId(e.target.value);
+										if (dbCreateStatus !== 'idle') {
+											setDbCreateStatus('idle');
+											setDbCreateMessage(null);
+										}
+									}}
+									placeholder="Notion 페이지 URL 붙여넣기"
+									spellCheck={false}
+								/>
+								<Button
+									size="sm"
+									className="h-8 px-3 text-xs shrink-0"
+									onClick={handleCreateDatabase}
+									disabled={dbCreateStatus === 'creating'}
+								>
+									{dbCreateStatus === 'creating' ? (
+										<Loader2 className="w-3.5 h-3.5 animate-spin" />
+									) : (
+										'DB 생성'
+									)}
+								</Button>
+							</div>
+
+							{dbCreateMessage && (
+								<Alert variant={dbCreateStatus === 'success' ? 'success' : 'destructive'} className="py-1.5 px-2.5">
+									{dbCreateStatus === 'success' ? (
+										<CheckCircle2 className="w-3.5 h-3.5" />
+									) : (
+										<AlertTriangle className="w-3.5 h-3.5" />
+									)}
+									<AlertDescription className="text-[11px] font-medium ml-1">
+										{dbCreateMessage}
+									</AlertDescription>
+								</Alert>
+							)}
+						</CardContent>
+					</Card>
+				</TabsContent>
+			</Tabs>
+
+			{/* 도움말 안내 */}
+			<div className="rounded-lg border bg-muted/30 p-2.5 text-[11px] text-muted-foreground flex items-start gap-2">
+				<HelpCircle className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+				<div>
+					<span className="font-semibold text-foreground">권한 공유 필수:</span> 대상 Notion 페이지나 DB의 상단 메뉴 [연결 추가]에서 본 통합 확장을 반드시 허용해 주세요.
 				</div>
-			</section>
-
-			{/* Database ID 설정 섹션 */}
-			<section className="settings-section">
-				<h3 className="settings-section__title">Notion Database</h3>
-				<p className="settings-section__desc">
-					저장할 Notion Database의 ID를 입력하세요.<br />
-					Database URL에서 32자리 ID를 복사하거나 전체 URL을 붙여넣으세요.
-				</p>
-
-				<div className="db-input-group">
-					<label htmlFor={dbInputId} className="sr-only">
-						Notion Database ID
-					</label>
-					<input
-						id={dbInputId}
-						type="text"
-						className={`db-input ${
-							dbSaveStatus === 'error'
-								? 'db-input--error'
-								: dbSaveStatus === 'success'
-								? 'db-input--success'
-								: ''
-						}`}
-						value={databaseId}
-						onChange={(e) => {
-							setDatabaseId(e.target.value);
-							if (dbSaveStatus !== 'idle') {
-								setDbSaveStatus('idle');
-								setDbSaveMessage(null);
-							}
-						}}
-						placeholder="Database ID 또는 URL 붙여넣기"
-						aria-describedby={dbSaveMessage ? 'db-save-msg' : undefined}
-						spellCheck={false}
-					/>
-					<button
-						className={`btn btn--secondary btn--sm db-save-btn ${
-							dbSaveStatus === 'saving' ? 'btn--loading' : ''
-						}`}
-						onClick={handleSaveDatabaseId}
-						disabled={dbSaveStatus === 'saving'}
-						aria-busy={dbSaveStatus === 'saving'}
-					>
-						{dbSaveStatus === 'saving' && (
-							<span className="btn-spinner btn-spinner--sm" aria-hidden="true" />
-						)}
-						{dbSaveStatus === 'saving' ? '' : '저장'}
-					</button>
-				</div>
-
-				{/* 저장 결과 피드백 */}
-				{dbSaveMessage && (
-					<p
-						id="db-save-msg"
-						className={`db-feedback ${
-							dbSaveStatus === 'success' ? 'db-feedback--success' : 'db-feedback--error'
-						}`}
-						role={dbSaveStatus === 'error' ? 'alert' : 'status'}
-					>
-						{dbSaveStatus === 'success' ? '✅' : '⚠️'} {dbSaveMessage}
-					</p>
-				)}
-
-				{/* DB ID 찾는 방법 안내 */}
-				<details className="db-help">
-					<summary className="db-help__trigger">Database ID 찾는 방법</summary>
-					<div className="db-help__content">
-						<ol className="db-help__steps">
-							<li>Notion에서 저장할 Database 페이지를 엽니다.</li>
-							<li>브라우저 주소창의 URL을 복사합니다.</li>
-							<li>위 입력창에 URL 전체를 붙여넣으면 자동으로 ID를 추출합니다.</li>
-							<li>"저장" 버튼을 클릭합니다.</li>
-						</ol>
-						<div className="db-help__note">
-							<strong>⚠️ 중요:</strong> Database에 이 통합이 <strong>공유</strong>되어 있어야 합니다.
-							(Database 메뉴 → 연결 추가 → 통합 검색)
-						</div>
-					</div>
-				</details>
-			</section>
-
-			{/* Database 자동 생성 섹션 */}
-			<section className="settings-section">
-				<h3 className="settings-section__title">Database 자동 생성</h3>
-				<p className="settings-section__desc">
-					새로운 DB를 생성할 Notion 부모 페이지의 URL이나 ID를 입력하세요.<br />
-					(반드시 해당 페이지에 통합이 공유되어 있어야 합니다)
-				</p>
-
-				<div className="db-input-group">
-					<label htmlFor={parentInputId} className="sr-only">
-						Parent Page URL / ID
-					</label>
-					<input
-						id={parentInputId}
-						type="text"
-						className={`db-input ${
-							dbCreateStatus === 'error'
-								? 'db-input--error'
-								: dbCreateStatus === 'success'
-								? 'db-input--success'
-								: ''
-						}`}
-						value={parentPageId}
-						onChange={(e) => {
-							setParentPageId(e.target.value);
-							if (dbCreateStatus !== 'idle') {
-								setDbCreateStatus('idle');
-								setDbCreateMessage(null);
-							}
-						}}
-						placeholder="Parent Page URL 붙여넣기"
-						aria-describedby={dbCreateMessage ? 'db-create-msg' : undefined}
-						spellCheck={false}
-					/>
-					<button
-						className={`btn btn--primary btn--sm db-save-btn ${
-							dbCreateStatus === 'creating' ? 'btn--loading' : ''
-						}`}
-						onClick={handleCreateDatabase}
-						disabled={dbCreateStatus === 'creating'}
-						aria-busy={dbCreateStatus === 'creating'}
-						style={{ minWidth: '90px' }}
-					>
-						{dbCreateStatus === 'creating' && (
-							<span className="btn-spinner btn-spinner--sm" aria-hidden="true" />
-						)}
-						{dbCreateStatus === 'creating' ? '' : 'DB 생성'}
-					</button>
-				</div>
-
-				{/* 생성 결과 피드백 */}
-				{dbCreateMessage && (
-					<p
-						id="db-create-msg"
-						className={`db-feedback ${
-							dbCreateStatus === 'success' ? 'db-feedback--success' : 'db-feedback--error'
-						}`}
-						role={dbCreateStatus === 'error' ? 'alert' : 'status'}
-					>
-						{dbCreateStatus === 'success' ? '✅' : '⚠️'} {dbCreateMessage}
-					</p>
-				)}
-			</section>
+			</div>
 		</div>
 	);
 };
