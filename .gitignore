@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Production / Builds
+.output/
+.wxt/
+.vercel/
+dist/
+build/
+
+# Environment Variables
+.env
+.env.local
+.env.*.local
+
+# Vite / Vitest cache
+.vite/
+
+# OS / Editor files
+.DS_Store
+*.log
