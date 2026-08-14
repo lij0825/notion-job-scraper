@@ -71,7 +71,7 @@ const App: React.FC = () => {
 			}) as ScrapeResponse;
 			console.log('[Popup Diagnostic] Response received in Popup:', response);
 
-			if (response?.success && response?.data) {
+			if (response?.success) {
 				// Active tab has valid modal -> set fresh data
 				setJobData(response.data);
 			} else {

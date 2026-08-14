@@ -12,6 +12,9 @@ export default defineConfig({
 		browser_specific_settings: {
 			gecko: {
 				id: 'notion-job-scraper@lij0825.com',
+				data_collection_permissions: {
+					required: []
+				}
 			},
 		},
 		// 확장 프로그램 아이콘 (Chrome 웹 스토어 + 툴바 표시)
