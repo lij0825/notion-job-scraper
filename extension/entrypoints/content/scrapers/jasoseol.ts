@@ -30,7 +30,7 @@ export async function scrapeJasoseol(): Promise<JobData | null> {
     return null;
   }
 
-  const text = activeContainer.innerText || '';
+  const text = activeContainer.innerText || activeContainer.textContent || '';
   const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
 
   if (lines.length < 7) {

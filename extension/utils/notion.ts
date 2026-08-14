@@ -154,9 +154,25 @@ export async function validateDatabase(
  * Helper to extract 32-char hex ID from URL or raw ID
  */
 export function parseNotionId(input: string): string {
-  const cleanInput = input.replace(/-/g, '');
-  const match = cleanInput.match(/[a-f0-9]{32}/i);
-  return match ? match[0] : input;
+	try {
+		const url = new URL(input);
+		const pathname = url.pathname;
+		const cleanPath = pathname.replace(/-/g, '');
+		const endMatch = cleanPath.match(/[a-f0-9]{32}$/i);
+		if (endMatch) {
+			return endMatch[0];
+		}
+		const pathMatch = cleanPath.match(/[a-f0-9]{32}/i);
+		if (pathMatch) {
+			return pathMatch[0];
+		}
+	} catch {
+		// Not a URL
+	}
+
+	const cleanInput = input.replace(/-/g, '');
+	const match = cleanInput.match(/[a-f0-9]{32}/i);
+	return match ? match[0] : input;
 }
 
 /**
