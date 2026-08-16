@@ -12,6 +12,11 @@ export default defineConfig({
 		browser_specific_settings: {
 			gecko: {
 				id: 'notion-job-scraper@lij0825.com',
+				strict_min_version: '142.0',
+				// @ts-expect-error Mozilla AMO mandatory data consent declaration
+				data_collection_permissions: {
+					required: ['none'],
+				},
 			},
 		},
 		// 확장 프로그램 아이콘 (Chrome 웹 스토어 + 툴바 표시)

@@ -5,8 +5,8 @@
 	"private": true,
 	"description": "한국 채용 공고를 스크래핑하여 Notion 데이터베이스에 자동 동기화하는 브라우저 확장",
 	"scripts": {
-		"dev": "wxt",
-		"dev:firefox": "wxt --browser firefox",
+		"dev": "wxt --port 5173",
+		"dev:firefox": "wxt --browser firefox --port 5173",
 		"build": "wxt build",
 		"build:firefox": "wxt build --browser firefox",
 		"zip": "wxt zip",

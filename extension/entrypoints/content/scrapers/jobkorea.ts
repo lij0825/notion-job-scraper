@@ -1,4 +1,4 @@
-﻿import type { JobData } from '../types';
+import type { JobData } from '../types';
 import { sanitizeText, parseDeadline } from '../../../utils/sanitize';
 
 /**
@@ -174,7 +174,6 @@ function extractDescription(): string {
  * JSON-LD의 description 필드에 HTML이 포함된 경우 처리합니다.
  */
 function stripHtml(html: string): string {
-	const div = document.createElement('div');
-	div.innerHTML = html;
-	return div.textContent ?? div.innerText ?? '';
+	const doc = new DOMParser().parseFromString(html, 'text/html');
+	return doc.body.textContent ?? '';
 }
