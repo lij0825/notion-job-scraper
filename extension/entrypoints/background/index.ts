@@ -35,7 +35,7 @@ export default defineBackground({
 				message: unknown,
 				_sender,
 				sendResponse: (response: BackgroundResponse) => void
-			): boolean => {
+			): true => {
 				const msg = message as BackgroundMessage;
 
 				// 비동기 핸들러를 사용하기 위해 즉시 true 반환 (Chrome MV3 필수)
@@ -324,7 +324,7 @@ async function saveDatabaseId(databaseId: string): Promise<BackgroundResponse<{ 
 /**
  * Creates a new Notion database under the given parent page ID.
  */
-async function handleCreateDatabase(parentPageId: string): Promise<BackgroundResponse<{ name: string }>> {
+async function handleCreateDatabase(parentPageId: string): Promise<BackgroundResponse<{ id: string; name: string }>> {
 	if (!parentPageId.trim()) {
 		return { success: false, error: 'Parent Page ID를 입력해 주세요.' };
 	}
@@ -337,7 +337,7 @@ async function handleCreateDatabase(parentPageId: string): Promise<BackgroundRes
 	try {
 		const newDbId = await createNotionDatabase(stored.accessToken, parentPageId.trim());
 		await updateDatabaseId(newDbId);
-		return { success: true, data: { name: '🎯 지원 채용공고 관리' } };
+		return { success: true, data: { id: newDbId, name: '🎯 지원 채용공고 관리' } };
 	} catch (err) {
 		const errorMessage = err instanceof Error ? err.message : '알 수 없는 오류';
 		if (errorMessage.includes('object_not_found')) {

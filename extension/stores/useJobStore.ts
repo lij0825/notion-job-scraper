@@ -106,7 +106,7 @@ export const useJobStore = create<JobState>((set, get) => ({
 				type: 'SCRAPE',
 			})) as ScrapeResponse;
 
-			if (response?.success && response.data) {
+			if (response?.success) {
 				set({
 					jobData: response.data,
 					editableData: { ...response.data },
@@ -119,7 +119,7 @@ export const useJobStore = create<JobState>((set, get) => ({
 				set({
 					jobData: null,
 					editableData: null,
-					scrapeError: response?.error || '채용 공고 데이터를 찾을 수 없습니다.',
+					scrapeError: response ? response.error : '채용 공고 데이터를 찾을 수 없습니다.',
 					isRefreshing: false,
 				});
 			}

@@ -58,7 +58,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 		set({ isConnecting: true, connectError: null });
 		try {
 			const res = await sendToBackground<AuthStatus>({ type: 'START_OAUTH' });
-			if (res.success && res.data) {
+			if (res.success) {
 				set({ authStatus: res.data, isConnecting: false });
 				return res.data.isConnected;
 			}
@@ -103,7 +103,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 				databaseId: trimmedId,
 			});
 
-			if (res.success && res.data) {
+			if (res.success) {
 				set((state) => ({
 					authStatus: { ...state.authStatus, databaseId: trimmedId },
 					dbSaveStatus: 'success',
@@ -133,16 +133,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
 		set({ dbCreateStatus: 'creating', dbCreateMessage: null });
 		try {
-			const res = await sendToBackground<{ name: string }>({
+			const res = await sendToBackground<{ id: string; name: string }>({
 				type: 'CREATE_DATABASE',
 				parentPageId: trimmedPageId,
 			});
 
-			if (res.success && res.data) {
+			if (res.success) {
 				// Re-fetch auth status to get updated databaseId
 				const authRes = await sendToBackground<AuthStatus>({ type: 'GET_AUTH_STATUS' });
 				set((state) => ({
-					authStatus: authRes.success && authRes.data ? authRes.data : state.authStatus,
+					authStatus: authRes.success ? authRes.data : state.authStatus,
 					dbCreateStatus: 'success',
 					dbCreateMessage: `"${res.data.name}" 데이터베이스가 생성되었습니다.`,
 				}));

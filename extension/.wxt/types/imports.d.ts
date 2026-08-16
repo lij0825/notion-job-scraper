@@ -8,6 +8,7 @@ declare global {
   const browser: typeof import('wxt/browser')['browser']
   const clearConnectionError: typeof import('C:/Users/이인준/.gemini/antigravity/scratch/notion-job-scraper/extension/utils/storage')['clearConnectionError']
   const clearStoredData: typeof import('C:/Users/이인준/.gemini/antigravity/scratch/notion-job-scraper/extension/utils/storage')['clearStoredData']
+  const cn: typeof import('C:/Users/이인준/.gemini/antigravity/scratch/notion-job-scraper/extension/utils/cn')['cn']
   const createIframeUi: typeof import('wxt/client')['createIframeUi']
   const createIntegratedUi: typeof import('wxt/client')['createIntegratedUi']
   const createJobPage: typeof import('C:/Users/이인준/.gemini/antigravity/scratch/notion-job-scraper/extension/utils/notion')['createJobPage']

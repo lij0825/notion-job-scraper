@@ -27,9 +27,12 @@ export default defineContentScript({
 
 		// Popup에서 보내는 SCRAPE 메시지 수신 리스너 등록
 		browser.runtime.onMessage.addListener(
-			(message: unknown, _sender, sendResponse: (response: ScrapeResponse) => void) => {
+			(message: unknown, _sender, sendResponse: (response: ScrapeResponse) => void): true => {
 				const msg = message as { type: string };
-				if (msg.type !== 'SCRAPE') return false;
+				if (msg.type !== 'SCRAPE') {
+					sendResponse({ success: false, error: '지원하지 않는 메시지입니다.' });
+					return true;
+				}
 
 				// 비동기 스크래핑 실행 후 응답 전송
 				console.log('[Content Script Listener] Message RECEIVED in content script:', msg);

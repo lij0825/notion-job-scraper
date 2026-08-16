@@ -16,7 +16,7 @@ export function useSaveDatabaseMutation() {
 				type: 'SAVE_DATABASE_ID',
 				databaseId: databaseId.trim(),
 			});
-			if (!res.success || !res.data) {
+			if (!res.success) {
 				throw new Error(res.error || 'Database ID 저장에 실패했습니다.');
 			}
 			return { databaseId: databaseId.trim(), name: res.data.name };
@@ -35,11 +35,11 @@ export function useCreateDatabaseMutation() {
 
 	return useMutation({
 		mutationFn: async (parentPageId: string) => {
-			const res = await sendToBackground<{ name: string }>({
+			const res = await sendToBackground<{ id: string; name: string }>({
 				type: 'CREATE_DATABASE',
 				parentPageId: parentPageId.trim(),
 			});
-			if (!res.success || !res.data) {
+			if (!res.success) {
 				throw new Error(res.error || 'Database 자동 생성에 실패했습니다.');
 			}
 			return res.data;

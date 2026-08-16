@@ -21,9 +21,10 @@ export function useLiveScrapeQuery(enabled = true) {
 				type: 'SCRAPE',
 			})) as ScrapeResponse;
 
-			if (!response?.success || !response.data) {
+			if (!response || !response.success) {
 				await browser.storage.local.remove('jobData');
-				throw new Error(response?.error || '채용 공고 데이터를 찾을 수 없습니다.');
+				const errorMsg = !response ? '채용 공고 데이터를 찾을 수 없습니다.' : response.error;
+				throw new Error(errorMsg || '채용 공고 데이터를 찾을 수 없습니다.');
 			}
 
 			return response.data;
@@ -44,7 +45,7 @@ export function useSaveJobToNotionMutation() {
 				payload: dataToSave,
 			});
 
-			if (!response.success || !response.data) {
+			if (!response.success) {
 				throw new Error(response.error || 'Notion 저장에 실패했습니다.');
 			}
 

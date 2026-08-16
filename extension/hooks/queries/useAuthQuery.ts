@@ -13,7 +13,7 @@ export function useAuthStatusQuery() {
 		queryKey: AUTH_QUERY_KEY,
 		queryFn: async () => {
 			const res = await sendToBackground<AuthStatus>({ type: 'GET_AUTH_STATUS' });
-			if (!res.success || !res.data) {
+			if (!res.success) {
 				return { isConnected: false };
 			}
 			return res.data;
@@ -27,7 +27,7 @@ export function useConnectMutation() {
 	return useMutation({
 		mutationFn: async () => {
 			const res = await sendToBackground<AuthStatus>({ type: 'START_OAUTH' });
-			if (!res.success || !res.data) {
+			if (!res.success) {
 				throw new Error(res.error || 'Notion OAuth 인증에 실패했습니다.');
 			}
 			return res.data;
