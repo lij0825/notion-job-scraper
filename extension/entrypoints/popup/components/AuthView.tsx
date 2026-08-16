@@ -6,6 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../..
 import { Alert, AlertDescription, AlertTitle } from '../../../components/ui/alert';
 import { Separator } from '../../../components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs';
+import { useAuthStore } from '../../../stores/useAuthStore';
+import { useJobStore } from '../../../stores/useJobStore';
 import {
 	Link2,
 	LogOut,
@@ -20,107 +22,49 @@ import {
 	Calendar,
 	SlidersHorizontal,
 } from 'lucide-react';
-import type { AuthStatus, BackgroundResponse, ConnectionError } from '../../../utils/types';
 
-interface AuthViewProps {
-	authStatus: AuthStatus;
-	onConnect: () => Promise<BackgroundResponse<AuthStatus>>;
-	onLogout: () => Promise<void>;
-	onSaveDatabaseId: (id: string) => Promise<BackgroundResponse<{ name: string }>>;
-	onCreateDatabase: (parentPageId: string) => Promise<BackgroundResponse<{ name: string }>>;
-	lastError?: ConnectionError;
-}
+const AuthView: React.FC = () => {
+	const {
+		authStatus,
+		isConnecting,
+		isLoggingOut,
+		connectError,
+		dbSaveStatus,
+		dbSaveMessage,
+		dbCreateStatus,
+		dbCreateMessage,
+		connectNotion,
+		logout,
+		saveDatabaseId,
+		createDatabase,
+		resetDbMessages,
+	} = useAuthStore();
 
-const AuthView: React.FC<AuthViewProps> = ({
-	authStatus,
-	onConnect,
-	onLogout,
-	onSaveDatabaseId,
-	onCreateDatabase,
-	lastError,
-}) => {
-	const [isConnecting, setIsConnecting] = useState(false);
-	const [connectError, setConnectError] = useState<string | null>(null);
+	const { setActiveView, executeLiveScrape } = useJobStore();
+
 	const [databaseId, setDatabaseId] = useState(authStatus.databaseId ?? '');
-	const [dbSaveStatus, setDbSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
-	const [dbSaveMessage, setDbSaveMessage] = useState<string | null>(null);
-	const [isLoggingOut, setIsLoggingOut] = useState(false);
-
 	const [parentPageId, setParentPageId] = useState('');
-	const [dbCreateStatus, setDbCreateStatus] = useState<'idle' | 'creating' | 'success' | 'error'>('idle');
-	const [dbCreateMessage, setDbCreateMessage] = useState<string | null>(null);
 
 	const dbInputId = useId();
 	const parentInputId = useId();
 
 	const handleConnect = async () => {
-		setIsConnecting(true);
-		setConnectError(null);
-
-		const response = await onConnect();
-
-		if (!response.success) {
-			setConnectError(response.error);
+		const success = await connectNotion();
+		if (success) {
+			setActiveView('scraping');
+			await executeLiveScrape();
 		}
-
-		setIsConnecting(false);
 	};
 
 	const handleSaveDatabaseId = async () => {
-		if (!databaseId.trim()) {
-			setDbSaveStatus('error');
-			setDbSaveMessage('Database ID를 입력해 주세요.');
-			return;
-		}
-
-		setDbSaveStatus('saving');
-		setDbSaveMessage(null);
-
-		const response = await onSaveDatabaseId(databaseId.trim());
-
-		if (response.success) {
-			setDbSaveStatus('success');
-			setDbSaveMessage(`"${response.data.name}" 데이터베이스가 연결되었습니다.`);
-			setTimeout(() => {
-				setDbSaveStatus('idle');
-				setDbSaveMessage(null);
-			}, 3000);
-		} else {
-			setDbSaveStatus('error');
-			setDbSaveMessage(response.error);
-		}
+		await saveDatabaseId(databaseId);
 	};
 
 	const handleCreateDatabase = async () => {
-		if (!parentPageId.trim()) {
-			setDbCreateStatus('error');
-			setDbCreateMessage('Parent Page ID 또는 URL을 입력해 주세요.');
-			return;
+		const success = await createDatabase(parentPageId);
+		if (success) {
+			setDatabaseId(useAuthStore.getState().authStatus.databaseId ?? '');
 		}
-
-		setDbCreateStatus('creating');
-		setDbCreateMessage(null);
-
-		const response = await onCreateDatabase(parentPageId.trim());
-
-		if (response.success) {
-			setDbCreateStatus('success');
-			setDbCreateMessage(`"${response.data.name}" 데이터베이스가 생성되었습니다.`);
-			setDatabaseId(authStatus.databaseId ?? '');
-			setTimeout(() => {
-				setDbCreateStatus('idle');
-				setDbCreateMessage(null);
-			}, 3000);
-		} else {
-			setDbCreateStatus('error');
-			setDbCreateMessage(response.error);
-		}
-	};
-
-	const handleLogout = async () => {
-		setIsLoggingOut(true);
-		await onLogout();
-		setIsLoggingOut(false);
 	};
 
 	// 미연결 상태 UI
@@ -137,12 +81,12 @@ const AuthView: React.FC<AuthViewProps> = ({
 					</p>
 				</div>
 
-				{lastError && !connectError && (
+				{authStatus.lastError && !connectError && (
 					<Alert variant="destructive">
 						<AlertTriangle className="w-4 h-4" />
 						<AlertTitle>연결 실패 이력</AlertTitle>
 						<AlertDescription className="text-[11px]">
-							{lastError.message}
+							{authStatus.lastError.message}
 						</AlertDescription>
 					</Alert>
 				)}
@@ -211,7 +155,7 @@ const AuthView: React.FC<AuthViewProps> = ({
 						variant="ghost"
 						size="sm"
 						className="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10 gap-1 px-2"
-						onClick={handleLogout}
+						onClick={logout}
 						disabled={isLoggingOut}
 					>
 						{isLoggingOut ? <Loader2 className="w-3 h-3 animate-spin" /> : <LogOut className="w-3 h-3" />}
@@ -254,8 +198,7 @@ const AuthView: React.FC<AuthViewProps> = ({
 									onChange={(e) => {
 										setDatabaseId(e.target.value);
 										if (dbSaveStatus !== 'idle') {
-											setDbSaveStatus('idle');
-											setDbSaveMessage(null);
+											resetDbMessages();
 										}
 									}}
 									placeholder="Database ID 또는 URL"
@@ -309,8 +252,7 @@ const AuthView: React.FC<AuthViewProps> = ({
 									onChange={(e) => {
 										setParentPageId(e.target.value);
 										if (dbCreateStatus !== 'idle') {
-											setDbCreateStatus('idle');
-											setDbCreateMessage(null);
+											resetDbMessages();
 										}
 									}}
 									placeholder="Notion 페이지 URL 붙여넣기"

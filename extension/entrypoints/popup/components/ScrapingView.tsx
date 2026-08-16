@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { browser } from 'wxt/browser';
 import DatePicker from './DatePicker';
 import { Button } from '../../../components/ui/button';
@@ -6,6 +6,7 @@ import { Input } from '../../../components/ui/input';
 import { Badge } from '../../../components/ui/badge';
 import { Card, CardContent } from '../../../components/ui/card';
 import { Alert, AlertDescription } from '../../../components/ui/alert';
+import { useJobStore, type SelectableField } from '../../../stores/useJobStore';
 import {
 	RefreshCw,
 	Sparkles,
@@ -20,23 +21,6 @@ import {
 	Loader2,
 	Lock,
 } from 'lucide-react';
-import type { JobData } from '../../../utils/types';
-
-type SaveStatus = 'idle' | 'saving' | 'success' | 'error';
-
-interface ScrapingViewProps {
-	jobData: JobData | null;
-	scrapeError: string | null;
-	saveStatus: SaveStatus;
-	saveError: string | null;
-	onSave: (jobData: JobData) => Promise<void>;
-	onRefresh: () => Promise<void>;
-}
-
-type SelectableField = 'title' | 'company' | 'deadline' | 'url' | 'description';
-type FieldSelectionMap = Record<SelectableField, boolean>;
-
-const REQUIRED_FIELDS: ReadonlySet<SelectableField> = new Set(['title', 'url']);
 
 const FIELD_LABELS: Record<SelectableField, string> = {
 	title: '직무명',
@@ -53,66 +37,20 @@ const SITE_URLS: Record<string, string> = {
 	'자소설닷컴': 'https://jasoseol.com',
 };
 
-const ScrapingView: React.FC<ScrapingViewProps> = ({
-	jobData,
-	scrapeError,
-	saveStatus,
-	saveError,
-	onSave,
-	onRefresh,
-}) => {
-	const [editableData, setEditableData] = useState<JobData | null>(null);
-	const [selectedFields, setSelectedFields] = useState<FieldSelectionMap>({
-		title: true,
-		company: true,
-		deadline: true,
-		url: true,
-		description: true,
-	});
-	const [isRefreshing, setIsRefreshing] = useState(false);
-
-	useEffect(() => {
-		if (jobData) {
-			setEditableData({ ...jobData });
-			setSelectedFields({
-				title: true,
-				company: true,
-				deadline: true,
-				url: true,
-				description: true,
-			});
-		}
-	}, [jobData]);
-
-	const updateField = <K extends keyof JobData>(field: K, value: JobData[K]) => {
-		setEditableData((prev) => (prev ? { ...prev, [field]: value } : prev));
-	};
-
-	const toggleField = (field: SelectableField) => {
-		if (REQUIRED_FIELDS.has(field)) return;
-		setSelectedFields((prev) => ({ ...prev, [field]: !prev[field] }));
-	};
-
-	const handleRefresh = async () => {
-		setIsRefreshing(true);
-		await onRefresh();
-		setIsRefreshing(false);
-	};
-
-	const handleSave = async () => {
-		if (!editableData) return;
-
-		const dataToSave: JobData = {
-			title: editableData.title,
-			company: selectedFields.company ? editableData.company : '',
-			url: editableData.url,
-			deadline: selectedFields.deadline ? editableData.deadline : null,
-			description: selectedFields.description ? editableData.description : '',
-			site: editableData.site,
-		};
-
-		await onSave(dataToSave);
-	};
+const ScrapingView: React.FC = () => {
+	const {
+		jobData,
+		editableData,
+		selectedFields,
+		scrapeError,
+		isRefreshing,
+		saveStatus,
+		saveError,
+		updateField,
+		toggleField,
+		executeLiveScrape,
+		saveToNotion,
+	} = useJobStore();
 
 	const handleSiteClick = (url: string) => {
 		browser.tabs.create({ url });
@@ -152,7 +90,7 @@ const ScrapingView: React.FC<ScrapingViewProps> = ({
 				<Button
 					variant="secondary"
 					size="sm"
-					onClick={handleRefresh}
+					onClick={executeLiveScrape}
 					disabled={isRefreshing}
 					className="gap-1.5 mt-2"
 				>
@@ -208,7 +146,7 @@ const ScrapingView: React.FC<ScrapingViewProps> = ({
 					variant="ghost"
 					size="icon"
 					className="h-7 w-7 text-muted-foreground hover:text-foreground"
-					onClick={handleRefresh}
+					onClick={executeLiveScrape}
 					disabled={isRefreshing}
 					title="다시 스크래핑"
 				>
@@ -361,7 +299,7 @@ const ScrapingView: React.FC<ScrapingViewProps> = ({
 			{/* 저장 버튼 */}
 			<Button
 				className="w-full py-5 font-semibold text-sm shadow-md gap-2"
-				onClick={handleSave}
+				onClick={saveToNotion}
 				disabled={saveStatus === 'saving' || saveStatus === 'success'}
 			>
 				{saveStatus === 'saving' && <Loader2 className="w-4 h-4 animate-spin" />}
