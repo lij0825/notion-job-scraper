@@ -140,7 +140,7 @@ const ScrapingView: React.FC<ScrapingViewProps> = ({
 
 	if (scrapeError && !jobData) {
 		return (
-			<div className="flex flex-col items-center justify-center p-6 space-y-4 text-center min-h-[460px]">
+			<div className="flex flex-col items-center justify-center p-6 py-8 space-y-4 text-center">
 				<div className="w-12 h-12 rounded-2xl bg-destructive/10 text-destructive flex items-center justify-center">
 					<AlertCircle className="w-6 h-6" />
 				</div>
@@ -165,7 +165,7 @@ const ScrapingView: React.FC<ScrapingViewProps> = ({
 
 	if (!jobData || !editableData) {
 		return (
-			<div className="flex flex-col items-center justify-center p-6 space-y-4 text-center min-h-[460px]">
+			<div className="flex flex-col items-center justify-center p-6 py-8 space-y-4 text-center">
 				<div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
 					<Briefcase className="w-6 h-6" />
 				</div>

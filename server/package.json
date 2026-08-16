@@ -1,9 +1,11 @@
 {
 	"name": "notion-job-scraper-server",
 	"version": "1.0.0",
+	"type": "module",
 	"private": true,
 	"description": "Notion OAuth 2.0 토큰 교환을 위한 Vercel 서버리스 프록시",
 	"scripts": {
+		"dev": "node --env-file=.env dev.js",
 		"build": "tsc --noEmit",
 		"deploy": "vercel --prod"
 	},

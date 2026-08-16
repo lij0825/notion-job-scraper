@@ -178,7 +178,7 @@ const App: React.FC = () => {
 
 	if (activeView === 'loading') {
 		return (
-			<div className="flex flex-col min-h-[560px] bg-background text-foreground">
+			<div className="w-[380px] flex flex-col bg-background text-foreground py-8">
 				<header className="flex items-center justify-between px-4 py-3 border-b border-border/50 bg-card/50 backdrop-blur">
 					<div className="flex items-center gap-2">
 						<div className="p-1.5 rounded-lg bg-primary/20 text-primary">
@@ -187,7 +187,7 @@ const App: React.FC = () => {
 						<span className="font-semibold text-sm">Notion Job Scraper</span>
 					</div>
 				</header>
-				<div className="flex-1 flex flex-col items-center justify-center space-y-2">
+				<div className="flex-1 flex flex-col items-center justify-center space-y-2 py-10">
 					<Loader2 className="w-6 h-6 animate-spin text-primary" />
 					<p className="text-xs text-muted-foreground">초기화 중...</p>
 				</div>
@@ -196,7 +196,7 @@ const App: React.FC = () => {
 	}
 
 	return (
-		<div className="flex flex-col min-h-[560px] bg-background text-foreground">
+		<div className="w-[380px] flex flex-col bg-background text-foreground">
 			{/* 헤더 */}
 			<header className="flex items-center justify-between px-4 py-3 border-b border-border/50 bg-card/50 backdrop-blur shrink-0">
 				<div className="flex items-center gap-2">
