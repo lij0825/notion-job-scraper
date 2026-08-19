@@ -18,6 +18,11 @@ build/
 # Vite / Vitest cache
 .vite/
 
+# Playwright artifacts
+test-results/
+playwright-report/
+blob-report/
+
 # OS / Editor files
 .DS_Store
 *.log

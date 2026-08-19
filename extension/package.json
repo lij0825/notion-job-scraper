@@ -13,6 +13,7 @@
 		"zip:firefox": "wxt zip --browser firefox",
 		"test": "vitest run",
 		"test:watch": "vitest",
+		"test:e2e": "playwright test",
 		"postinstall": "wxt prepare"
 	},
 	"dependencies": {
@@ -33,6 +34,7 @@
 		"zustand": "^5.0.3"
 	},
 	"devDependencies": {
+		"@playwright/test": "^1.50.1",
 		"@testing-library/jest-dom": "^7.0.1",
 		"@testing-library/react": "^16.3.2",
 		"@types/react": "^18.3.11",
