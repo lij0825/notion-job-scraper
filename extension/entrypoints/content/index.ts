@@ -14,9 +14,9 @@ export default defineContentScript({
 	matches: [
 		'*://jasoseol.com/*',
 		'*://*.jasoseol.com/*',
-		'*://www.wanted.co.kr/jobdetail/*',
+		'*://www.wanted.co.kr/*',
+		'*://wanted.co.kr/*',
 		'*://www.saramin.co.kr/zf_user/jobs/view*',
-		'*://www.jobkorea.co.kr/Recruit/GI_Read/*',
 		'*://www.jobkorea.co.kr/Recruit/GI_Read/*',
 	],
 	runAt: 'document_idle',

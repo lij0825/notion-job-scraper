@@ -1,9 +1,9 @@
-﻿import type { JobData } from '../types';
+import type { JobData } from '../types';
 import { sanitizeText, parseDeadline } from '../../../utils/sanitize';
 
 // ---------------------------------------------------------------
 // 원티드(Wanted) Next.js SPA 스크래퍼
-// URL 패턴: https://www.wanted.co.kr/jobdetail/{id}
+// URL 패턴: https://www.wanted.co.kr/jobdetail/{id} 또는 /wd/{id}
 //
 // 전략:
 //   1차: __NEXT_DATA__ JSON 파싱 (가장 신뢰할 수 있는 구조화 데이터)
@@ -17,16 +17,25 @@ interface WantedNextData {
 		pageProps?: {
 			job?: WantedJob;
 			initialJobData?: WantedJob;
+			initialData?: WantedJob;
 		};
 	};
 }
 
 interface WantedJob {
-	id: number;
-	position: string;
-	company: { name: string };
-	due_time: string | null;
-	detail: {
+	id?: number;
+	position?: string;
+	company?: {
+		name?: string;
+		company_name?: string;
+	};
+	due_time?: string | null;
+	intro?: string;
+	main_tasks?: string;
+	requirements?: string;
+	preferred_points?: string;
+	benefits?: string;
+	detail?: {
 		intro?: string;
 		main_tasks?: string;
 		requirements?: string;
@@ -62,15 +71,19 @@ function scrapeFromNextData(): JobData | null {
 	}
 
 	const pageProps = parsed.props?.pageProps;
-	// job 또는 initialJobData 중 존재하는 것 사용
-	const job = pageProps?.job ?? pageProps?.initialJobData;
+	// job, initialJobData 또는 initialData 중 존재하는 것 사용
+	const job = pageProps?.job ?? pageProps?.initialJobData ?? pageProps?.initialData;
 	if (!job) return null;
 
-	const description = buildDescription(job.detail);
+	const title = job.position ?? '';
+	const company = job.company?.name ?? job.company?.company_name ?? '';
+	if (!title && !company) return null;
+
+	const description = buildDescription(job);
 
 	return {
-		title: job.position ?? '',
-		company: job.company?.name ?? '',
+		title,
+		company,
 		url: window.location.href,
 		deadline: parseWantedDueTime(job.due_time),
 		description: sanitizeText(description),
@@ -79,16 +92,17 @@ function scrapeFromNextData(): JobData | null {
 }
 
 /**
- * Wanted API의 detail 객체에서 직무 설명 텍스트를 조립합니다.
+ * Wanted API의 job 객체에서 직무 설명 텍스트를 조립합니다.
  * 각 섹션(intro, 주요 업무, 자격 요건, 우대 사항, 혜택)을 순서대로 연결합니다.
  */
-function buildDescription(detail: WantedJob['detail']): string {
+function buildDescription(job: WantedJob): string {
+	const detail = job.detail;
 	const sections: Array<{ label: string; content?: string }> = [
-		{ label: '포지션 소개', content: detail?.intro },
-		{ label: '주요 업무', content: detail?.main_tasks },
-		{ label: '자격 요건', content: detail?.requirements },
-		{ label: '우대 사항', content: detail?.preferred_points },
-		{ label: '혜택 및 복지', content: detail?.benefits },
+		{ label: '포지션 소개', content: detail?.intro || job.intro },
+		{ label: '주요 업무', content: detail?.main_tasks || job.main_tasks },
+		{ label: '자격 요건', content: detail?.requirements || job.requirements },
+		{ label: '우대 사항', content: detail?.preferred_points || job.preferred_points },
+		{ label: '혜택 및 복지', content: detail?.benefits || job.benefits },
 	];
 
 	return sections
@@ -112,6 +126,8 @@ function parseWantedDueTime(dueTime: string | null | undefined): string | null {
 /** DOM 선택자 기반 fallback 스크래퍼 */
 function scrapeFromDom(): JobData | null {
 	const titleSelectors = [
+		'h1[class*="JobHeader"]',
+		'h1',
 		'h2[data-cy="job-position"]',
 		'.JobHeader_className',
 		'h2.position',
@@ -122,10 +138,21 @@ function scrapeFromDom(): JobData | null {
 
 	const companySelectors = [
 		'a[data-cy="company-name"]',
+		'a[data-attribute-id="company__click"]',
+		'[class*="JobHeader"] a[href*="/company/"]',
 		'.CompanyInfo_name',
 		'.company-name a',
 		'[class*="CompanyInfo"] [class*="name"]',
 		'[class*="company"] a',
+	];
+
+	const descriptionSelectors = [
+		'[class*="JobDescription_JobDescription"]',
+		'[class*="JobDescription"]',
+		'[class*="job-description"]',
+		'[class*="Description"]',
+		'[data-testid="job-detail-description"]',
+		'article',
 	];
 
 	const title = queryTextContent(titleSelectors);
@@ -138,16 +165,21 @@ function scrapeFromDom(): JobData | null {
 			'[class*="deadline"], [class*="due"], .job-due, [class*="Deadline"]'
 		)?.textContent ?? '';
 
-	const descriptionEl = document.querySelector<HTMLElement>(
-		'[class*="JobDescription"], [class*="job-description"], [class*="Description"]'
-	);
+	let description = '';
+	for (const selector of descriptionSelectors) {
+		const el = document.querySelector<HTMLElement>(selector);
+		if (el?.textContent?.trim()) {
+			description = el.textContent;
+			break;
+		}
+	}
 
 	return {
 		title,
 		company,
 		url: window.location.href,
 		deadline: parseDeadline(deadlineText),
-		description: sanitizeText(descriptionEl?.textContent ?? ''),
+		description: sanitizeText(description),
 		site: 'wanted',
 	};
 }
@@ -171,7 +203,7 @@ type SpaChangeCallback = (url: string) => void;
 
 /**
  * 원티드 SPA 페이지 이동 감지 리스너를 등록합니다.
- * URL이 /jobdetail/ 패턴으로 변경될 때마다 callback을 호출합니다.
+ * URL이 /jobdetail/ 또는 /wd/ 패턴으로 변경될 때마다 callback을 호출합니다.
  *
  * @returns 리스너 정리(cleanup) 함수
  */
@@ -227,5 +259,5 @@ export function watchWantedNavigation(callback: SpaChangeCallback): () => void {
 
 /** 현재 URL이 원티드 채용 공고 상세 페이지인지 확인합니다. */
 function isJobDetailUrl(url: string): boolean {
-	return url.includes('wanted.co.kr/jobdetail/');
+	return url.includes('wanted.co.kr/jobdetail/') || url.includes('wanted.co.kr/wd/');
 }
