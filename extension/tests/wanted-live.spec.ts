@@ -70,13 +70,13 @@ test.describe('원티드(Wanted) 실시간 라이브 채용 공고 스크래핑 
 		console.log(`[Wanted Live] Navigated to job detail page: ${currentUrl}`);
 
 		// 2. Background Worker를 통해 SCRAPE 메시지 전송
-		const response = await backgroundWorker.evaluate(async (url: string) => {
+		const response = await backgroundWorker.evaluate(async (url: string): Promise<ScrapeResponse> => {
 			const tabs = await chrome.tabs.query({});
 			const targetTab = tabs.find((t) => t.url && (t.url.includes('/wd/') || t.url.includes('/jobdetail/')));
 			if (!targetTab?.id) {
 				return {
 					success: false,
-					error: `Target tab not found for URL: ${url}. Open tabs: ${tabs.map(t => t.url).join(', ')}`,
+					error: `Target tab not found for URL: ${url}. Open tabs: ${tabs.map((t) => t.url).join(', ')}`,
 				};
 			}
 
