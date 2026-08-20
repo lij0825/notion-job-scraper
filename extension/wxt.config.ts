@@ -1,4 +1,5 @@
 import { defineConfig } from 'wxt';
+import packageJson from './package.json';
 
 export default defineConfig({
 	// React 모듈 활성화
@@ -7,7 +8,7 @@ export default defineConfig({
 	manifest: {
 		name: 'Notion Job Scraper',
 		description: '한국 채용 공고를 스크래핑하여 Notion 데이터베이스에 자동 동기화합니다.',
-		version: '1.0.0',
+		version: packageJson.version,
 		// Firefox 확장 ID 고정 — Redirect URI가 리빌드마다 변경되지 않도록 방지
 		browser_specific_settings: {
 			gecko: {
@@ -39,10 +40,13 @@ export default defineConfig({
 		],
 	},
 
-	// Vite 설정: PROXY_URL 기본값 주입
-	// .env 파일에 VITE_PROXY_URL=https://your-vercel-app.vercel.app 로 설정 가능
+	// Vite 설정: PROXY_URL 및 Sentry/버전 환경변수 주입
 	vite: () => ({
 		define: {
+			'import.meta.env.VITE_APP_VERSION': JSON.stringify(packageJson.version),
+			'import.meta.env.VITE_SENTRY_DSN': JSON.stringify(
+				process.env['VITE_SENTRY_DSN'] ?? ''
+			),
 			// VITE_PROXY_URL 환경변수가 없으면 로컬 개발 서버 URL을 기본값으로 사용
 			'import.meta.env.VITE_PROXY_URL': JSON.stringify(
 				process.env['VITE_PROXY_URL'] ?? 'http://localhost:3000'

@@ -1,7 +1,12 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
+import ErrorFallback from './ErrorFallback';
+import { initPopupSentry, PopupSentry } from '../../utils/sentry-popup';
 import './popup.css';
+
+// Sentry 관측성 초기화
+initPopupSentry();
 
 // React 18 루트 생성 및 렌더링
 const rootElement = document.getElementById('root');
@@ -11,6 +16,12 @@ if (!rootElement) {
 
 createRoot(rootElement).render(
 	<React.StrictMode>
-		<App />
+		<PopupSentry.ErrorBoundary
+			fallback={({ error, resetError }) => (
+				<ErrorFallback error={error} resetError={resetError} />
+			)}
+		>
+			<App />
+		</PopupSentry.ErrorBoundary>
 	</React.StrictMode>
 );

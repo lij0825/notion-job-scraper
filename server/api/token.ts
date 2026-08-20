@@ -1,4 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { initServerSentry, Sentry } from '../lib/sentry';
+
+// Serverless 환경 Sentry 초기화
+initServerSentry();
 
 /**
  * Notion OAuth 2.0 토큰 교환 프록시 엔드포인트
@@ -43,6 +47,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 	const clientSecret = process.env['NOTION_CLIENT_SECRET'];
 
 	if (!clientId || !clientSecret) {
+		const envError = new Error('서버 설정 오류: 환경변수가 누락되었습니다.');
+		Sentry.captureException(envError);
+		await Sentry.flush(2000);
+
 		console.error('[token] 환경변수 NOTION_CLIENT_ID 또는 NOTION_CLIENT_SECRET이 설정되지 않았습니다.');
 		res.status(500).json({ error: '서버 설정 오류: 환경변수가 누락되었습니다.' });
 		return;
@@ -85,6 +93,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 			}),
 		});
 	} catch (networkErr) {
+		Sentry.captureException(networkErr);
+		await Sentry.flush(2000);
+
 		// Notion API 네트워크 오류 (타임아웃, DNS 실패 등)
 		const networkErrMsg = networkErr instanceof Error ? networkErr.message : String(networkErr);
 		console.error('[token] Notion API 네트워크 오류:', {
@@ -104,7 +115,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 	let responseData: Record<string, unknown>;
 	try {
 		responseData = JSON.parse(responseText) as Record<string, unknown>;
-	} catch {
+	} catch (parseErr) {
+		Sentry.captureException(parseErr);
+		await Sentry.flush(2000);
+
 		// JSON 파싱 실패 시 구조화된 에러로 변환하여 반환
 		console.error('[token] Notion API 응답 JSON 파싱 실패:', responseText.slice(0, 500));
 		res.status(notionResponse.status).json({
@@ -117,6 +131,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
 	// Notion API 오류 응답 — 구조화된 필드로 재구성하여 전달
 	if (!notionResponse.ok) {
+		const apiError = new Error(
+			`Notion API error (${notionResponse.status}): ${String(responseData['error'] ?? 'unknown_error')}`
+		);
+		Sentry.captureException(apiError);
+		await Sentry.flush(2000);
+
 		console.error('[token] Notion API 오류:', {
 			httpStatus: notionResponse.status,
 			notionError: responseData['error'],

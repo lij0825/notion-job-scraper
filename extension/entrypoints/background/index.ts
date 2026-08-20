@@ -16,6 +16,10 @@ import type {
 	NotionTokenResponse,
 	JobData,
 } from '../../utils/types';
+import { initBackgroundSentry, BackgroundSentry } from '../../utils/sentry-background';
+
+// Background Service Worker Sentry 초기화
+initBackgroundSentry();
 
 /**
  * Background Service Worker 메인 엔트리포인트
@@ -42,6 +46,7 @@ export default defineBackground({
 				handleMessage(msg)
 					.then(sendResponse)
 					.catch((err: unknown) => {
+						BackgroundSentry.captureException(err);
 						const errorMessage =
 							err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.';
 						sendResponse({ success: false, error: errorMessage });

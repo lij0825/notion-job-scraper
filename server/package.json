@@ -7,11 +7,16 @@
 	"scripts": {
 		"dev": "node --env-file=.env dev.js",
 		"build": "tsc --noEmit",
+		"test": "vitest run",
 		"deploy": "vercel --prod"
 	},
 	"devDependencies": {
 		"@types/node": "^20.19.43",
 		"@vercel/node": "^3.2.8",
-		"typescript": "^5.6.3"
+		"typescript": "^5.6.3",
+		"vitest": "^4.1.11"
+	},
+	"dependencies": {
+		"@sentry/node": "^10.70.0"
 	}
 }
