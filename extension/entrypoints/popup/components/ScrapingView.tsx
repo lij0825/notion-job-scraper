@@ -20,6 +20,7 @@ import {
 	ExternalLink,
 	Loader2,
 	Send,
+	PenLine,
 } from 'lucide-react';
 import type { JobData } from '../../../utils/types';
 
@@ -47,16 +48,23 @@ export const ScrapingView: React.FC = () => {
 
 	const [editableData, setEditableData] = useState<JobData | null>(null);
 	const [selectedFields, setSelectedFields] = useState<FieldSelectionMap>(DEFAULT_SELECTION);
+	const [isManualMode, setIsManualMode] = useState<boolean>(false);
+	const [validationError, setValidationError] = useState<string | null>(null);
 
 	// Sync local state when fresh scrape data arrives
 	useEffect(() => {
 		if (jobData) {
 			setEditableData({ ...jobData });
 			setSelectedFields(DEFAULT_SELECTION);
+			setIsManualMode(false);
+			setValidationError(null);
 		}
 	}, [jobData]);
 
 	const updateField = <K extends keyof JobData>(field: K, value: JobData[K]) => {
+		if (field === 'title' && validationError) {
+			setValidationError(null);
+		}
 		setEditableData((prev) => (prev ? { ...prev, [field]: value } : prev));
 	};
 
@@ -65,15 +73,53 @@ export const ScrapingView: React.FC = () => {
 		setSelectedFields((prev) => ({ ...prev, [field]: !prev[field] }));
 	};
 
+	const handleStartManualEntry = async () => {
+		try {
+			const [activeTab] = await browser.tabs.query({ active: true, currentWindow: true });
+			setEditableData({
+				title: activeTab?.title ?? '',
+				company: '',
+				url: activeTab?.url ?? '',
+				deadline: null,
+				description: '',
+				site: 'unknown',
+			});
+		} catch {
+			setEditableData({
+				title: '',
+				company: '',
+				url: '',
+				deadline: null,
+				description: '',
+				site: 'unknown',
+			});
+		}
+		setIsManualMode(true);
+		setSelectedFields(DEFAULT_SELECTION);
+		setValidationError(null);
+	};
+
+	const handleRetryScrape = () => {
+		setIsManualMode(false);
+		setValidationError(null);
+		refetch();
+	};
+
 	const handleSave = async () => {
 		if (!editableData) return;
 
+		if (!editableData.title.trim()) {
+			setValidationError('직무명(Title)을 입력해 주세요.');
+			return;
+		}
+		setValidationError(null);
+
 		const dataToSave: JobData = {
-			title: editableData.title,
-			company: selectedFields.company ? editableData.company : '',
-			url: editableData.url,
+			title: editableData.title.trim(),
+			company: selectedFields.company ? editableData.company.trim() : '',
+			url: editableData.url.trim(),
 			deadline: selectedFields.deadline ? editableData.deadline : null,
-			description: selectedFields.description ? editableData.description : '',
+			description: selectedFields.description ? editableData.description.trim() : '',
 			site: editableData.site,
 		};
 
@@ -104,7 +150,7 @@ export const ScrapingView: React.FC = () => {
 		</div>
 	);
 
-	if (isLoading) {
+	if (isLoading && !isManualMode) {
 		return (
 			<div className="flex flex-col items-center justify-center p-6 py-10 space-y-2.5 text-center">
 				<Loader2 className="w-5 h-5 animate-spin text-primary" />
@@ -113,33 +159,51 @@ export const ScrapingView: React.FC = () => {
 		);
 	}
 
-	if (error || !jobData || !editableData) {
+	if ((error || !jobData || !editableData) && !isManualMode) {
 		return (
 			<div className="flex flex-col items-center justify-center p-5 py-7 space-y-3.5 text-center">
 				<div className="w-10 h-10 rounded-lg bg-muted/60 border border-border flex items-center justify-center text-lg">
 					🔍
 				</div>
 				<div className="space-y-1">
-					<h3 className="text-xs font-semibold text-foreground">채용 공고를 찾을 수 없습니다</h3>
+					<h3 className="text-xs font-semibold text-foreground">채용 공고를 찾지 못했습니다</h3>
 					<p className="text-[11px] text-muted-foreground max-w-[260px] leading-relaxed">
 						{error instanceof Error
 							? error.message
-							: '채용 공고 상세 페이지를 연 뒤 다시 시도해 주세요.'}
+							: '지원 사이트가 아니거나 공고 페이지를 찾을 수 없습니다. 직접 입력하여 저장할 수 있습니다.'}
 					</p>
 				</div>
+
+				<div className="w-full space-y-2 pt-1">
+					<Button
+						variant="default"
+						size="sm"
+						onClick={handleStartManualEntry}
+						className="w-full h-8 gap-1.5 text-xs rounded bg-primary text-primary-foreground hover:bg-primary/90 font-medium shadow-sm"
+					>
+						<PenLine className="w-3.5 h-3.5" />
+						<span>직접 입력하여 저장</span>
+					</Button>
+
+					<Button
+						variant="secondary"
+						size="sm"
+						onClick={handleRetryScrape}
+						disabled={isRefetching}
+						className="w-full h-8 gap-1.5 text-xs rounded bg-secondary text-secondary-foreground hover:bg-accent"
+					>
+						<RefreshCw className={`w-3 h-3 ${isRefetching ? 'animate-spin' : ''}`} />
+						<span>자동 감지 다시 시도</span>
+					</Button>
+				</div>
+
 				{renderSupportedSites()}
-				<Button
-					variant="secondary"
-					size="sm"
-					onClick={() => refetch()}
-					disabled={isRefetching}
-					className="h-8 gap-1.5 text-xs rounded mt-1 bg-secondary text-secondary-foreground hover:bg-accent"
-				>
-					<RefreshCw className={`w-3 h-3 ${isRefetching ? 'animate-spin' : ''}`} />
-					<span>다시 시도</span>
-				</Button>
 			</div>
 		);
+	}
+
+	if (!editableData) {
+		return null;
 	}
 
 	const siteLabels: Record<string, string> = {
@@ -159,23 +223,60 @@ export const ScrapingView: React.FC = () => {
 			<div className="flex items-center justify-between px-1">
 				<div className="flex items-center gap-1.5">
 					<Badge variant="outline" className="gap-1 py-0 px-2 text-[10px] bg-card border-border font-medium text-foreground">
-						<Sparkles className="w-2.5 h-2.5 text-primary" />
-						<span>{siteLabels[editableData.site] ?? editableData.site}</span>
+						{isManualMode ? (
+							<>
+								<PenLine className="w-2.5 h-2.5 text-primary" />
+								<span>직접 입력</span>
+							</>
+						) : (
+							<>
+								<Sparkles className="w-2.5 h-2.5 text-primary" />
+								<span>{siteLabels[editableData.site] ?? editableData.site}</span>
+							</>
+						)}
 					</Badge>
 					<span className="text-[10px] text-muted-foreground">
 						{selectedCount}/{totalCount} 속성 선택됨
 					</span>
 				</div>
-				<Button
-					variant="ghost"
-					size="icon"
-					className="h-6 w-6 text-muted-foreground hover:text-foreground hover:bg-accent rounded"
-					onClick={() => refetch()}
-					disabled={isRefetching}
-					title="다시 스크래핑"
-				>
-					<RefreshCw className={`w-3 h-3 ${isRefetching ? 'animate-spin' : ''}`} />
-				</Button>
+				<div className="flex items-center gap-1">
+					{isManualMode ? (
+						<Button
+							variant="ghost"
+							size="sm"
+							className="h-6 text-[11px] gap-1 px-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded"
+							onClick={handleRetryScrape}
+							disabled={isRefetching}
+							title="자동 감지 시도"
+						>
+							<RefreshCw className={`w-2.5 h-2.5 ${isRefetching ? 'animate-spin' : ''}`} />
+							<span>자동 감지</span>
+						</Button>
+					) : (
+						<>
+							<Button
+								variant="ghost"
+								size="sm"
+								className="h-6 text-[11px] gap-1 px-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded"
+								onClick={handleStartManualEntry}
+								title="직접 입력 모드로 전환"
+							>
+								<PenLine className="w-2.5 h-2.5" />
+								<span>직접 입력</span>
+							</Button>
+							<Button
+								variant="ghost"
+								size="icon"
+								className="h-6 w-6 text-muted-foreground hover:text-foreground hover:bg-accent rounded"
+								onClick={() => refetch()}
+								disabled={isRefetching}
+								title="다시 스크래핑"
+							>
+								<RefreshCw className={`w-3 h-3 ${isRefetching ? 'animate-spin' : ''}`} />
+							</Button>
+						</>
+					)}
+				</div>
 			</div>
 
 			{/* Notion Database Properties Table */}
@@ -192,7 +293,7 @@ export const ScrapingView: React.FC = () => {
 						value={editableData.title}
 						onChange={(e) => updateField('title', e.target.value)}
 						className="h-7 text-xs bg-transparent border-transparent hover:border-border/60 focus:border-border px-1.5 focus-visible:ring-0 focus-visible:bg-muted/40 font-medium"
-						placeholder="직무명 입력"
+						placeholder="직무명 입력 (필수)"
 						spellCheck={false}
 					/>
 				</NotionPropertyRow>
@@ -271,6 +372,13 @@ export const ScrapingView: React.FC = () => {
 					)}
 				</NotionPropertyRow>
 			</div>
+
+			{/* 필수 검증 에러 알림 */}
+			{validationError && (
+				<NotionCallout variant="error" icon={<AlertCircle className="w-3.5 h-3.5" />}>
+					<span>{validationError}</span>
+				</NotionCallout>
+			)}
 
 			{/* 피드백 상태 메시지 */}
 			{saveMutation.isSuccess && (

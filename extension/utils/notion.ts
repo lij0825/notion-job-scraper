@@ -100,10 +100,14 @@ export async function createJobPage(
 						},
 					}
 				: {}),
-			// 공고 URL (URL 속성 — 필수)
-			URL: {
-				url: jobData.url,
-			},
+			// 공고 URL (URL 속성 — 유효한 문자열인 경우만 포함)
+			...(jobData.url && jobData.url.trim()
+				? {
+						URL: {
+							url: jobData.url.trim(),
+						},
+					}
+				: {}),
 			// 마감일 (Date 속성 — 선택: null이면 제외)
 			...(jobData.deadline
 				? {

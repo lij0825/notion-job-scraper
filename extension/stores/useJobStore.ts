@@ -35,6 +35,7 @@ export interface JobState {
 	setJobData: (data: JobData | null) => void;
 	updateField: <K extends keyof JobData>(field: K, value: JobData[K]) => void;
 	toggleField: (field: SelectableField) => void;
+	startManualEntry: (defaultData?: Partial<JobData>) => void;
 	executeLiveScrape: () => Promise<void>;
 	saveToNotion: () => Promise<boolean>;
 	resetSaveStatus: () => void;
@@ -85,6 +86,23 @@ export const useJobStore = create<JobState>((set, get) => ({
 				[field]: !state.selectedFields[field],
 			},
 		}));
+	},
+
+	startManualEntry: (defaultData) => {
+		const initialJob: JobData = {
+			title: defaultData?.title ?? '',
+			company: defaultData?.company ?? '',
+			url: defaultData?.url ?? '',
+			deadline: defaultData?.deadline ?? null,
+			description: defaultData?.description ?? '',
+			site: defaultData?.site ?? 'unknown',
+		};
+		set({
+			jobData: initialJob,
+			editableData: { ...initialJob },
+			selectedFields: { ...DEFAULT_SELECTION },
+			scrapeError: null,
+		});
 	},
 
 	executeLiveScrape: async () => {

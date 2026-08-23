@@ -125,4 +125,26 @@ describe('useJobStore (Zustand 스크래핑/채용공고 스토어)', () => {
 		expect(success).toBe(true);
 		expect(useJobStore.getState().saveStatus).toBe('success');
 	});
+
+	it('Given 채용 공고를 찾지 못했거나 수동 입력을 원할 때, When startManualEntry를 호출하면, Then 기본값 템플릿으로 초기화된다', () => {
+		// Given
+		useJobStore.setState({
+			scrapeError: '채용 공고 데이터를 찾을 수 없습니다.',
+		});
+
+		// When
+		useJobStore.getState().startManualEntry({
+			url: 'https://careers.google.com/jobs/results/12345',
+			title: 'Software Engineer',
+		});
+
+		// Then
+		const state = useJobStore.getState();
+		expect(state.editableData?.title).toBe('Software Engineer');
+		expect(state.editableData?.url).toBe('https://careers.google.com/jobs/results/12345');
+		expect(state.editableData?.company).toBe('');
+		expect(state.editableData?.site).toBe('unknown');
+		expect(state.scrapeError).toBeNull();
+		expect(state.selectedFields.title).toBe(true);
+	});
 });
