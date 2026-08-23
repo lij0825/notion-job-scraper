@@ -33,26 +33,38 @@ export default defineBackground({
 	type: 'module',
 
 	main() {
-		// Popup에서 오는 메시지 처리
+		// Popup에서 오는 메시지 처리 (Firefox Promise 반환 + Chrome sendResponse 콜백 동시 지원)
 		browser.runtime.onMessage.addListener(
 			(
 				message: unknown,
 				_sender,
 				sendResponse: (response: BackgroundResponse) => void
-			): true => {
+			) => {
 				const msg = message as BackgroundMessage;
 
-				// 비동기 핸들러를 사용하기 위해 즉시 true 반환 (Chrome MV3 필수)
-				handleMessage(msg)
-					.then(sendResponse)
+				const promise = handleMessage(msg)
+					.then((res) => {
+						try {
+							sendResponse(res);
+						} catch {
+							// Channel already closed or using promise
+						}
+						return res;
+					})
 					.catch((err: unknown) => {
 						BackgroundSentry.captureException(err);
 						const errorMessage =
 							err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.';
-						sendResponse({ success: false, error: errorMessage });
+						const errorRes: BackgroundResponse = { success: false, error: errorMessage };
+						try {
+							sendResponse(errorRes);
+						} catch {
+							// Channel already closed
+						}
+						return errorRes;
 					});
 
-				return true;
+				return promise;
 			}
 		);
 	},

@@ -1,12 +1,13 @@
+import { initPopupSentry, PopupSentry } from '../../utils/sentry-popup';
+
+// Sentry 관측성 최우선 초기화 (모든 React 컴포넌트 로드 전 실행)
+initPopupSentry();
+
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
 import ErrorFallback from './ErrorFallback';
-import { initPopupSentry, PopupSentry } from '../../utils/sentry-popup';
 import './popup.css';
-
-// Sentry 관측성 초기화
-initPopupSentry();
 
 // React 18 루트 생성 및 렌더링
 const rootElement = document.getElementById('root');

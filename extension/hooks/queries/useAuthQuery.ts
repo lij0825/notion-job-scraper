@@ -2,8 +2,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { browser } from 'wxt/browser';
 import type { AuthStatus, BackgroundMessage, BackgroundResponse } from '../../utils/types';
 
-async function sendToBackground<T>(message: BackgroundMessage): Promise<BackgroundResponse<T>> {
-	return browser.runtime.sendMessage(message) as Promise<BackgroundResponse<T>>;
+async function sendToBackground<T>(message: BackgroundMessage, timeoutMs = 3000): Promise<BackgroundResponse<T>> {
+	const messagePromise = browser.runtime.sendMessage(message) as Promise<BackgroundResponse<T>>;
+	const timeoutPromise = new Promise<BackgroundResponse<T>>((resolve) =>
+		setTimeout(() => resolve({ success: false, error: 'Background 응답 시간 초과' } as BackgroundResponse<T>), timeoutMs)
+	);
+	return Promise.race([messagePromise, timeoutPromise]);
 }
 
 export const AUTH_QUERY_KEY = ['authStatus'] as const;
@@ -12,11 +16,16 @@ export function useAuthStatusQuery() {
 	return useQuery<AuthStatus>({
 		queryKey: AUTH_QUERY_KEY,
 		queryFn: async () => {
-			const res = await sendToBackground<AuthStatus>({ type: 'GET_AUTH_STATUS' });
-			if (!res.success) {
+			try {
+				const res = await sendToBackground<AuthStatus>({ type: 'GET_AUTH_STATUS' });
+				if (!res || !res.success || !res.data) {
+					return { isConnected: false };
+				}
+				return res.data;
+			} catch (err) {
+				console.warn('[Popup] Auth status query fallback:', err);
 				return { isConnected: false };
 			}
-			return res.data;
 		},
 	});
 }

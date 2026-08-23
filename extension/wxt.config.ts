@@ -40,6 +40,12 @@ export default defineConfig({
 		],
 	},
 
+	// Zip 패키징 설정: 빌드된 배포 파일들을 releases/v{{version}}/ 폴더에 자동 분류
+	zip: {
+		artifactTemplate: 'releases/v{{version}}/{{name}}-{{version}}-{{browser}}.zip',
+		sourcesTemplate: 'releases/v{{version}}/{{name}}-{{version}}-sources.zip',
+	},
+
 	// Vite 설정: PROXY_URL 및 Sentry/버전 환경변수 주입
 	vite: () => ({
 		define: {
