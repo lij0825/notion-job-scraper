@@ -12,22 +12,26 @@ async function sendToBackground<T>(message: BackgroundMessage, timeoutMs = 3000)
 
 export const AUTH_QUERY_KEY = ['authStatus'] as const;
 
+export async function fetchAuthStatus(): Promise<AuthStatus> {
+	try {
+		const res = await sendToBackground<AuthStatus>({ type: 'GET_AUTH_STATUS' });
+		if (!res || !res.success || !res.data) {
+			return { isConnected: false };
+		}
+		return res.data;
+	} catch (err) {
+		console.warn('[Popup] Auth status query fallback:', err);
+		return { isConnected: false };
+	}
+}
+
+export const authStatusQueryOptions = {
+	queryKey: AUTH_QUERY_KEY,
+	queryFn: fetchAuthStatus,
+};
+
 export function useAuthStatusQuery() {
-	return useQuery<AuthStatus>({
-		queryKey: AUTH_QUERY_KEY,
-		queryFn: async () => {
-			try {
-				const res = await sendToBackground<AuthStatus>({ type: 'GET_AUTH_STATUS' });
-				if (!res || !res.success || !res.data) {
-					return { isConnected: false };
-				}
-				return res.data;
-			} catch (err) {
-				console.warn('[Popup] Auth status query fallback:', err);
-				return { isConnected: false };
-			}
-		},
-	});
+	return useQuery<AuthStatus>(authStatusQueryOptions);
 }
 
 export function useConnectMutation() {

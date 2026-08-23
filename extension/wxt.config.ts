@@ -1,5 +1,13 @@
 import { defineConfig } from 'wxt';
+import fs from 'node:fs';
+import path from 'node:path';
 import packageJson from './package.json';
+
+// 릴리즈 패키징 폴더 자동 보장
+const releaseDir = path.resolve('.output/releases/v' + packageJson.version);
+if (!fs.existsSync(releaseDir)) {
+	fs.mkdirSync(releaseDir, { recursive: true });
+}
 
 export default defineConfig({
 	// React 모듈 활성화
@@ -44,6 +52,17 @@ export default defineConfig({
 	zip: {
 		artifactTemplate: 'releases/v{{version}}/{{name}}-{{version}}-{{browser}}.zip',
 		sourcesTemplate: 'releases/v{{version}}/{{name}}-{{version}}-sources.zip',
+	},
+
+	hooks: {
+		'zip:start': () => {
+			import('node:fs').then((fs) => {
+				import('node:path').then((path) => {
+					const releaseDir = path.resolve('.output/releases/v' + packageJson.version);
+					fs.mkdirSync(releaseDir, { recursive: true });
+				});
+			});
+		},
 	},
 
 	// Vite 설정: PROXY_URL 및 Sentry/버전 환경변수 주입

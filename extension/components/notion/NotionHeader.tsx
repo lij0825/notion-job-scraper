@@ -1,7 +1,7 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation } from '@tanstack/react-router';
 import { Button } from '../ui/button';
-import { Settings, ArrowLeft, ExternalLink } from 'lucide-react';
+import { Settings, ArrowLeft } from 'lucide-react';
 import type { AuthStatus } from '../../utils/types';
 
 export interface NotionHeaderProps {
@@ -11,7 +11,6 @@ export interface NotionHeaderProps {
 
 export const NotionHeader: React.FC<NotionHeaderProps> = ({
 	authStatus,
-	onDismissError,
 }) => {
 	const location = useLocation();
 	const isSettings = location.pathname === '/settings';
@@ -41,7 +40,7 @@ export const NotionHeader: React.FC<NotionHeaderProps> = ({
 							className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-accent rounded"
 							asChild
 						>
-							<Link to="/" title="뒤로가기" aria-label="메인 뷰로 돌아가기">
+							<Link to="/" search={{ mode: 'auto' }} title="뒤로가기" aria-label="메인 뷰로 돌아가기">
 								<ArrowLeft className="w-3.5 h-3.5" />
 							</Link>
 						</Button>
@@ -52,7 +51,7 @@ export const NotionHeader: React.FC<NotionHeaderProps> = ({
 							className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-accent rounded"
 							asChild
 						>
-							<Link to="/settings" title="설정" aria-label="설정 페이지로 이동">
+							<Link to="/settings" search={{ tab: 'existing' }} title="설정" aria-label="설정 페이지로 이동">
 								<Settings className="w-3.5 h-3.5" />
 							</Link>
 						</Button>
@@ -61,7 +60,7 @@ export const NotionHeader: React.FC<NotionHeaderProps> = ({
 			</div>
 
 			{/* Status Bar */}
-			<div className="px-3 py-1 bg-muted/20 flex items-center justify-between text-[11px] border-t border-border/30">
+			<div className="px-3 py-1 bg-muted/20 flex items-center text-[11px] border-t border-border/30">
 				<div className="flex items-center gap-1.5">
 					<span
 						className={`w-1.5 h-1.5 rounded-full ${
@@ -80,15 +79,6 @@ export const NotionHeader: React.FC<NotionHeaderProps> = ({
 								: '미연결 상태'}
 					</span>
 				</div>
-
-				{authStatus?.databaseId && (
-					<div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-						<span>DB:</span>
-						<span className="font-mono bg-muted/40 px-1 py-0.5 rounded text-[9px]">
-							{authStatus.databaseId.slice(0, 6)}...
-						</span>
-					</div>
-				)}
 			</div>
 		</header>
 	);

@@ -2,6 +2,7 @@ import React from 'react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { RouterProvider, createRootRoute, createRouter, createMemoryHistory } from '@tanstack/react-router';
 import { browser } from 'wxt/browser';
 import ScrapingView from '../ScrapingView';
 import type { JobData } from '../../../../utils/types';
@@ -10,14 +11,27 @@ const mockTabsSendMessage = vi.mocked(browser.tabs.sendMessage);
 const mockTabsQuery = vi.mocked(browser.tabs.query);
 const mockRuntimeSendMessage = vi.mocked(browser.runtime.sendMessage);
 
-const renderWithQueryClient = (component: React.ReactElement) => {
+const renderWithTestRouter = (initialPath: string = '/') => {
 	const queryClient = new QueryClient({
 		defaultOptions: {
 			queries: { retry: false },
 			mutations: { retry: false },
 		},
 	});
-	return render(<QueryClientProvider client={queryClient}>{component}</QueryClientProvider>);
+
+	const rootRoute = createRootRoute({
+		component: ScrapingView,
+	});
+	const testRouter = createRouter({
+		routeTree: rootRoute,
+		history: createMemoryHistory({ initialEntries: [initialPath] }),
+	});
+
+	return render(
+		<QueryClientProvider client={queryClient}>
+			<RouterProvider router={testRouter} />
+		</QueryClientProvider>
+	);
 };
 
 describe('ScrapingView (채용 공고 스크래핑 및 직접 입력 뷰)', () => {
@@ -42,7 +56,7 @@ describe('ScrapingView (채용 공고 스크래핑 및 직접 입력 뷰)', () =
 		});
 
 		// When
-		renderWithQueryClient(<ScrapingView />);
+		renderWithTestRouter();
 
 		// Then
 		await waitFor(() => {
@@ -60,7 +74,7 @@ describe('ScrapingView (채용 공고 스크래핑 및 직접 입력 뷰)', () =
 		});
 
 		// When
-		renderWithQueryClient(<ScrapingView />);
+		renderWithTestRouter();
 
 		// Then
 		await waitFor(() => {
@@ -78,9 +92,9 @@ describe('ScrapingView (채용 공고 스크래핑 및 직접 입력 뷰)', () =
 		});
 		mockTabsQuery.mockResolvedValue([
 			{ id: 1, url: 'https://careers.company.com/job/123', title: 'Company Career Page' },
-		] as unknown as chrome.tabs.Tab[]);
+		] as unknown as Awaited<ReturnType<typeof browser.tabs.query>>);
 
-		renderWithQueryClient(<ScrapingView />);
+		renderWithTestRouter();
 
 		await waitFor(() => {
 			expect(screen.getByRole('button', { name: /직접 입력하여 저장/i })).toBeInTheDocument();
@@ -93,7 +107,7 @@ describe('ScrapingView (채용 공고 스크래핑 및 직접 입력 뷰)', () =
 		await waitFor(() => {
 			expect(screen.getByText('직접 입력')).toBeInTheDocument();
 		});
-		expect(screen.getByDisplayValue('https://careers.company.com/job/123')).toBeInTheDocument();
+		expect(screen.getByPlaceholderText(/직무명 입력/i)).toBeInTheDocument();
 	});
 
 	it('Given 직접 입력 모드에서 직무명을 입력하고 저장할 때, When 저장 버튼을 누르면, Then Notion 저장 요청이 전송되고 성공 메시지가 표시된다', async () => {
@@ -104,13 +118,13 @@ describe('ScrapingView (채용 공고 스크래핑 및 직접 입력 뷰)', () =
 		});
 		mockTabsQuery.mockResolvedValue([
 			{ id: 1, url: 'https://careers.company.com/job/999', title: '' },
-		] as unknown as chrome.tabs.Tab[]);
+		] as unknown as Awaited<ReturnType<typeof browser.tabs.query>>);
 		mockRuntimeSendMessage.mockResolvedValueOnce({
 			success: true,
 			data: { pageId: 'notion-page-999' },
 		});
 
-		renderWithQueryClient(<ScrapingView />);
+		renderWithTestRouter();
 
 		await waitFor(() => {
 			expect(screen.getByRole('button', { name: /직접 입력하여 저장/i })).toBeInTheDocument();
@@ -123,10 +137,10 @@ describe('ScrapingView (채용 공고 스크래핑 및 직접 입력 뷰)', () =
 		});
 
 		// When: 직무명 및 회사명 입력 후 저장
-		const titleInput = screen.getByPlaceholderText('직무명 입력 (필수)');
+		const titleInput = screen.getByPlaceholderText(/직무명 입력/i);
 		fireEvent.change(titleInput, { target: { value: '풀스택 엔지니어' } });
 
-		const companyInput = screen.getByPlaceholderText('회사명 입력');
+		const companyInput = screen.getByPlaceholderText(/회사명 입력/i);
 		fireEvent.change(companyInput, { target: { value: '테크 스타트업' } });
 
 		const saveButton = screen.getByRole('button', { name: /선택한 항목 Notion에 저장/i });
@@ -142,7 +156,7 @@ describe('ScrapingView (채용 공고 스크래핑 및 직접 입력 뷰)', () =
 				payload: expect.objectContaining({
 					title: '풀스택 엔지니어',
 					company: '테크 스타트업',
-					url: 'https://careers.company.com/job/999',
+					url: '',
 				}),
 			})
 		);
@@ -156,9 +170,9 @@ describe('ScrapingView (채용 공고 스크래핑 및 직접 입력 뷰)', () =
 		});
 		mockTabsQuery.mockResolvedValueOnce([
 			{ id: 1, url: 'https://careers.company.com', title: '' },
-		] as unknown as chrome.tabs.Tab[]);
+		] as unknown as Awaited<ReturnType<typeof browser.tabs.query>>);
 
-		renderWithQueryClient(<ScrapingView />);
+		renderWithTestRouter();
 
 		await waitFor(() => {
 			expect(screen.getByRole('button', { name: /직접 입력하여 저장/i })).toBeInTheDocument();

@@ -1,6 +1,6 @@
 {
 	"name": "notion-job-scraper",
-	"version": "1.0.1",
+	"version": "1.0.11",
 	"type": "module",
 	"private": true,
 	"description": "한국 채용 공고를 스크래핑하여 Notion 데이터베이스에 자동 동기화하는 브라우저 확장",
@@ -25,14 +25,15 @@
 		"@sentry/browser": "^10.70.0",
 		"@sentry/react": "^10.70.0",
 		"@tanstack/react-query": "^5.66.9",
+		"@tanstack/react-router": "^1.170.32",
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",
 		"lucide-react": "^1.31.0",
 		"react": "^18.3.1",
 		"react-dom": "^18.3.1",
-		"react-router-dom": "^6.28.2",
 		"tailwind-merge": "^3.6.0",
 		"webextension-polyfill": "^0.12.0",
+		"zod": "^4.4.3",
 		"zustand": "^5.0.3"
 	},
 	"devDependencies": {

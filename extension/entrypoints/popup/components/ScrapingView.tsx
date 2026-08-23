@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { browser } from 'wxt/browser';
 import DatePicker from './DatePicker';
 import { Button } from '../../../components/ui/button';
@@ -43,23 +44,27 @@ const SITE_URLS: Record<string, string> = {
 };
 
 export const ScrapingView: React.FC = () => {
+	const navigate = useNavigate();
+	const search = useSearch({ strict: false }) as { mode?: 'auto' | 'manual' };
+	const isManualFromUrl = search?.mode === 'manual';
+
 	const { data: jobData, isLoading, error, refetch, isRefetching } = useLiveScrapeQuery();
 	const saveMutation = useSaveJobToNotionMutation();
 
 	const [editableData, setEditableData] = useState<JobData | null>(null);
 	const [selectedFields, setSelectedFields] = useState<FieldSelectionMap>(DEFAULT_SELECTION);
-	const [isManualMode, setIsManualMode] = useState<boolean>(false);
+	const [isManualMode, setIsManualMode] = useState<boolean>(isManualFromUrl);
 	const [validationError, setValidationError] = useState<string | null>(null);
 
 	// Sync local state when fresh scrape data arrives
 	useEffect(() => {
-		if (jobData) {
+		if (jobData && !isManualFromUrl) {
 			setEditableData({ ...jobData });
 			setSelectedFields(DEFAULT_SELECTION);
 			setIsManualMode(false);
 			setValidationError(null);
 		}
-	}, [jobData]);
+	}, [jobData, isManualFromUrl]);
 
 	const updateField = <K extends keyof JobData>(field: K, value: JobData[K]) => {
 		if (field === 'title' && validationError) {
@@ -73,35 +78,25 @@ export const ScrapingView: React.FC = () => {
 		setSelectedFields((prev) => ({ ...prev, [field]: !prev[field] }));
 	};
 
-	const handleStartManualEntry = async () => {
-		try {
-			const [activeTab] = await browser.tabs.query({ active: true, currentWindow: true });
-			setEditableData({
-				title: activeTab?.title ?? '',
-				company: '',
-				url: activeTab?.url ?? '',
-				deadline: null,
-				description: '',
-				site: 'unknown',
-			});
-		} catch {
-			setEditableData({
-				title: '',
-				company: '',
-				url: '',
-				deadline: null,
-				description: '',
-				site: 'unknown',
-			});
-		}
+	const handleStartManualEntry = () => {
+		setEditableData({
+			title: '',
+			company: '',
+			url: '',
+			deadline: null,
+			description: '',
+			site: 'unknown',
+		});
 		setIsManualMode(true);
 		setSelectedFields(DEFAULT_SELECTION);
 		setValidationError(null);
+		navigate({ to: '/', search: { mode: 'manual' } });
 	};
 
 	const handleRetryScrape = () => {
 		setIsManualMode(false);
 		setValidationError(null);
+		navigate({ to: '/', search: { mode: 'auto' } });
 		refetch();
 	};
 
@@ -292,8 +287,8 @@ export const ScrapingView: React.FC = () => {
 						type="text"
 						value={editableData.title}
 						onChange={(e) => updateField('title', e.target.value)}
-						className="h-7 text-xs bg-transparent border-transparent hover:border-border/60 focus:border-border px-1.5 focus-visible:ring-0 focus-visible:bg-muted/40 font-medium"
-						placeholder="직무명 입력 (필수)"
+						className="h-7 text-xs bg-transparent border-transparent hover:border-border/60 focus:border-border px-1.5 focus-visible:ring-0 focus-visible:bg-muted/40 font-medium placeholder:text-muted-foreground/50"
+						placeholder="직무명 입력 (예: 백엔드 개발자)"
 						spellCheck={false}
 					/>
 				</NotionPropertyRow>
@@ -310,8 +305,8 @@ export const ScrapingView: React.FC = () => {
 						value={editableData.company}
 						onChange={(e) => updateField('company', e.target.value)}
 						disabled={!selectedFields.company}
-						className="h-7 text-xs bg-transparent border-transparent hover:border-border/60 focus:border-border px-1.5 focus-visible:ring-0 focus-visible:bg-muted/40"
-						placeholder="회사명 입력"
+						className="h-7 text-xs bg-transparent border-transparent hover:border-border/60 focus:border-border px-1.5 focus-visible:ring-0 focus-visible:bg-muted/40 placeholder:text-muted-foreground/50"
+						placeholder="회사명 입력 (예: 토스)"
 						spellCheck={false}
 					/>
 				</NotionPropertyRow>
@@ -345,8 +340,8 @@ export const ScrapingView: React.FC = () => {
 						type="text"
 						value={editableData.url}
 						onChange={(e) => updateField('url', e.target.value)}
-						className="h-7 text-xs bg-transparent border-transparent hover:border-border/60 focus:border-border px-1.5 focus-visible:ring-0 focus-visible:bg-muted/40 font-mono text-[11px]"
-						placeholder="공고 URL"
+						className="h-7 text-xs bg-transparent border-transparent hover:border-border/60 focus:border-border px-1.5 focus-visible:ring-0 focus-visible:bg-muted/40 font-mono text-[11px] placeholder:text-muted-foreground/50"
+						placeholder="공고 링크 URL (선택 입력)"
 						spellCheck={false}
 					/>
 				</NotionPropertyRow>
@@ -360,10 +355,10 @@ export const ScrapingView: React.FC = () => {
 				>
 					{selectedFields.description ? (
 						<textarea
-							className="flex min-h-[60px] w-full rounded border border-transparent hover:border-border/60 focus:border-border bg-transparent px-1.5 py-1 text-xs shadow-none placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-0 focus-visible:bg-muted/40 resize-y"
+							className="flex min-h-[60px] w-full rounded border border-transparent hover:border-border/60 focus:border-border bg-transparent px-1.5 py-1 text-xs shadow-none placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:ring-0 focus-visible:bg-muted/40 resize-y"
 							value={editableData.description}
 							onChange={(e) => updateField('description', e.target.value)}
-							placeholder="직무 설명 본문"
+							placeholder="직무 설명 및 주요 자격 요건을 입력하세요"
 							rows={3}
 							spellCheck={false}
 						/>
