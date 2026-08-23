@@ -11,8 +11,8 @@
 		"allowSyntheticDefaultImports": true,
 		"baseUrl": ".",
 		"paths": {
-			"~/*": ["./app/*"]
+			"~/*": ["./src/*"]
 		}
 	},
-	"include": ["app/**/*", "app.config.ts"]
+	"include": ["src/**/*", "vite.config.ts"]
 }

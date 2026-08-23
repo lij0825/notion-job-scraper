@@ -50,15 +50,34 @@ function JobsDashboardComponent() {
 	const navigate = useNavigate({ from: Route.fullPath });
 
 	const handleStatusChange = (status: z.infer<typeof jobsSearchSchema>['status']) => {
-		navigate({ search: (prev) => ({ ...prev, status, page: 1 }) });
+		navigate({
+			search: (prev) => ({
+				...prev,
+				status,
+				page: 1,
+			}),
+		});
 	};
 
 	const handleSiteChange = (site: z.infer<typeof jobsSearchSchema>['site']) => {
-		navigate({ search: (prev) => ({ ...prev, site, page: 1 }) });
+		navigate({
+			search: (prev) => ({
+				...prev,
+				site,
+				page: 1,
+			}),
+		});
 	};
 
 	const handleSearchInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-		navigate({ search: (prev) => ({ ...prev, q: e.target.value, page: 1 }) });
+		const val = e.target.value;
+		navigate({
+			search: (prev) => ({
+				...prev,
+				q: val,
+				page: 1,
+			}),
+		});
 	};
 
 	return (
@@ -123,24 +142,24 @@ function JobsDashboardComponent() {
 				</div>
 			) : (
 				<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-					{jobs.map((job) => (
-						<div
-							key={job.id}
-							className="p-4 rounded-xl border border-border/60 bg-card hover:border-border transition-all space-y-3 flex flex-col justify-between"
-						>
-							<div className="space-y-2">
-								<div className="flex items-center justify-between gap-2">
-									<span className="text-[11px] font-semibold text-muted-foreground px-2 py-0.5 rounded bg-muted/50">
-										{SITE_MAP[job.site] || job.site}
-									</span>
-									<span
-										className={`text-[10px] font-medium px-2 py-0.5 rounded border ${
-											STATUS_MAP[job.status]?.color
-										}`}
-									>
-										{STATUS_MAP[job.status]?.label || job.status}
-									</span>
-								</div>
+					{jobs.map((job: JobItem) => {
+						const statusInfo = STATUS_MAP[job.status] || STATUS_MAP.applied;
+						return (
+							<div
+								key={job.id}
+								className="p-4 rounded-xl border border-border/60 bg-card hover:border-border transition-all space-y-3 flex flex-col justify-between"
+							>
+								<div className="space-y-2">
+									<div className="flex items-center justify-between gap-2">
+										<span className="text-[11px] font-semibold text-muted-foreground px-2 py-0.5 rounded bg-muted/50">
+											{SITE_MAP[job.site] || job.site}
+										</span>
+										<span
+											className={`text-[10px] font-medium px-2 py-0.5 rounded border ${statusInfo.color}`}
+										>
+											{statusInfo.label}
+										</span>
+									</div>
 
 								<div>
 									<h3 className="font-semibold text-sm text-foreground line-clamp-1">{job.title}</h3>
@@ -151,24 +170,25 @@ function JobsDashboardComponent() {
 								</div>
 							</div>
 
-							<div className="pt-2 border-t border-border/40 flex items-center justify-between text-[11px] text-muted-foreground">
-								<div className="flex items-center gap-1">
-									<Calendar className="w-3 h-3" />
-									<span>{job.deadline ? `마감: ${job.deadline}` : '상시 채용'}</span>
-								</div>
+								<div className="pt-2 border-t border-border/40 flex items-center justify-between text-[11px] text-muted-foreground">
+									<div className="flex items-center gap-1">
+										<Calendar className="w-3 h-3" />
+										<span>{job.deadline ? `마감: ${job.deadline}` : '상시 채용'}</span>
+									</div>
 
-								<a
-									href={job.url}
-									target="_blank"
-									rel="noreferrer"
-									className="inline-flex items-center gap-1 text-primary hover:underline font-medium"
-								>
-									<span>공고 보기</span>
-									<ExternalLink className="w-2.5 h-2.5" />
-								</a>
+									<a
+										href={job.url}
+										target="_blank"
+										rel="noreferrer"
+										className="inline-flex items-center gap-1 text-primary hover:underline font-medium"
+									>
+										<span>공고 보기</span>
+										<ExternalLink className="w-2.5 h-2.5" />
+									</a>
+								</div>
 							</div>
-						</div>
-					))}
+						);
+					})}
 				</div>
 			)}
 		</div>
