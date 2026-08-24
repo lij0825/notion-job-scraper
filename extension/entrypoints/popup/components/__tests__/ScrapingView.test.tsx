@@ -103,11 +103,12 @@ describe('ScrapingView (채용 공고 스크래핑 및 직접 입력 뷰)', () =
 		// When: 직접 입력 버튼 클릭
 		fireEvent.click(screen.getByRole('button', { name: /직접 입력하여 저장/i }));
 
-		// Then: 직접 입력 뱃지와 폼 입력창 표시
+		// Then: 직접 입력 뱃지와 탭 타이틀/URL이 프리필되어 표시
 		await waitFor(() => {
 			expect(screen.getByText('직접 입력')).toBeInTheDocument();
 		});
-		expect(screen.getByPlaceholderText(/직무명 입력/i)).toBeInTheDocument();
+		expect(screen.getByDisplayValue('Company Career Page')).toBeInTheDocument();
+		expect(screen.getByDisplayValue('https://careers.company.com/job/123')).toBeInTheDocument();
 	});
 
 	it('Given 직접 입력 모드에서 직무명을 입력하고 저장할 때, When 저장 버튼을 누르면, Then Notion 저장 요청이 전송되고 성공 메시지가 표시된다', async () => {
@@ -156,7 +157,7 @@ describe('ScrapingView (채용 공고 스크래핑 및 직접 입력 뷰)', () =
 				payload: expect.objectContaining({
 					title: '풀스택 엔지니어',
 					company: '테크 스타트업',
-					url: '',
+					url: 'https://careers.company.com/job/999',
 				}),
 			})
 		);

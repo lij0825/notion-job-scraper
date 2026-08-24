@@ -13,7 +13,7 @@ function HomeComponent() {
 			<section className="text-center space-y-4 max-w-2xl mx-auto py-8">
 				<div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-medium">
 					<Sparkles className="w-3.5 h-3.5" />
-					<span>Notion Job Scraper v1.0.11 출시</span>
+					<span>Notion Job Scraper v1.0.12 출시</span>
 				</div>
 				<h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground leading-tight">
 					채용 공고를 클릭 한 번으로 <br />

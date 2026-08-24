@@ -78,11 +78,23 @@ export const ScrapingView: React.FC = () => {
 		setSelectedFields((prev) => ({ ...prev, [field]: !prev[field] }));
 	};
 
-	const handleStartManualEntry = () => {
+	const handleStartManualEntry = async () => {
+		let tabTitle = '';
+		let tabUrl = '';
+		try {
+			const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+			if (tab) {
+				tabTitle = tab.title || '';
+				tabUrl = tab.url || '';
+			}
+		} catch (err) {
+			console.warn('[Popup] Could not query active tab for manual entry:', err);
+		}
+
 		setEditableData({
-			title: '',
+			title: tabTitle,
 			company: '',
-			url: '',
+			url: tabUrl,
 			deadline: null,
 			description: '',
 			site: 'unknown',

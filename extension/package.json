@@ -1,6 +1,6 @@
 {
 	"name": "notion-job-scraper",
-	"version": "1.0.11",
+	"version": "1.0.12",
 	"type": "module",
 	"private": true,
 	"description": "한국 채용 공고를 스크래핑하여 Notion 데이터베이스에 자동 동기화하는 브라우저 확장",
