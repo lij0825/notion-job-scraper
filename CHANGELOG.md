@@ -5,6 +5,18 @@
 
 ---
 
+## [v1.0.13] - 2026-08-26
+
+### ✨ 신규 기능 및 개선 (Features & Improvements)
+- **사람인(Saramin) 실공고 파싱 정밀화 및 메타데이터 추출 안정화**
+	- `og:title` 내 D-Day 접미사(`(D-5)`, `(D-0)` 등) 및 회사명 브라켓 접두사 정규식 분리 처리 고도화
+	- 메타 설명문(`meta[name="description"]`) 내 마감일 문자열 감지 및 Notion 표준 날짜 포맷(`YYYY-MM-DD`) 변환 안정성 강화
+- **Firefox 브라우저 확장 배포 빌드 및 패키징 지원**
+	- Firefox Manifest V2 환경에 맞춘 WXT 빌드 및 번들 패키징(`build:firefox`, `zip:firefox`)
+	- 크로스 브라우저 환경에서의 단위/통합 테스트 전수 검증 완료
+
+---
+
 ## [v1.0.12] - 2026-08-24
 
 ### ✨ 신규 기능 (Features)
