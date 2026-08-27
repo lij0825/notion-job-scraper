@@ -1,0 +1,16 @@
+{
+	"name": "notion-job-scraper-root",
+	"version": "1.0.13",
+	"private": true,
+	"scripts": {
+		"dev:server": "npm --prefix server run dev",
+		"dev:ext": "npm --prefix extension run dev",
+		"dev:ext:firefox": "npm --prefix extension run dev:firefox",
+		"build:server": "npm --prefix server run build",
+		"build:ext": "npm --prefix extension run build",
+		"build:ext:firefox": "npm --prefix extension run build:firefox",
+		"test:server": "npm --prefix server run test",
+		"test:ext": "npm --prefix extension run test",
+		"test": "npm run test:server && npm run test:ext"
+	}
+}

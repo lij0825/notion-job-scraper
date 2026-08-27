@@ -33,23 +33,22 @@ export default defineBackground({
 	type: 'module',
 
 	main() {
-		// Popup에서 오는 메시지 처리 (Firefox Promise 반환 + Chrome sendResponse 콜백 동시 지원)
+		// Popup에서 오는 메시지 처리 (비동기 응답을 위해 true 반환)
 		browser.runtime.onMessage.addListener(
 			(
 				message: unknown,
 				_sender,
 				sendResponse: (response: BackgroundResponse) => void
-			) => {
+			): true => {
 				const msg = message as BackgroundMessage;
 
-				const promise = handleMessage(msg)
+				handleMessage(msg)
 					.then((res) => {
 						try {
 							sendResponse(res);
 						} catch {
-							// Channel already closed or using promise
+							// Channel already closed
 						}
-						return res;
 					})
 					.catch((err: unknown) => {
 						BackgroundSentry.captureException(err);
@@ -61,10 +60,9 @@ export default defineBackground({
 						} catch {
 							// Channel already closed
 						}
-						return errorRes;
 					});
 
-				return promise;
+				return true;
 			}
 		);
 	},
@@ -214,7 +212,13 @@ async function startOAuthFlow(): Promise<BackgroundResponse<AuthStatus>> {
 
 		tokenData = (await tokenResponse.json()) as NotionTokenResponse;
 	} catch (err) {
-		const errorMsg = `프록시 서버 연결 실패: ${err instanceof Error ? err.message : String(err)}`;
+		const rawMsg = err instanceof Error ? err.message : String(err);
+		let errorMsg: string;
+		if (proxyUrl.includes('localhost') || proxyUrl.includes('127.0.0.1')) {
+			errorMsg = `프록시 서버 연결 실패 (${proxyUrl}): 로컬 OAuth 프록시 서버가 실행 중이지 않습니다. 'server' 디렉토리에서 'npm run dev'를 실행해주세요. (${rawMsg})`;
+		} else {
+			errorMsg = `프록시 서버 연결 실패 (${proxyUrl}): 서버 상태 및 네트워크 연결을 확인해주세요. (${rawMsg})`;
+		}
 		await setConnectionError(errorMsg);
 		return {
 			success: false,

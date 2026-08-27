@@ -37,7 +37,7 @@ export default defineConfig({
 		},
 		// MV3 필수 권한
 		permissions: ['storage', 'identity', 'tabs', 'scripting', 'activeTab'],
-		// 스크래핑 대상 사이트 + Notion API 접근 허용
+		// 스크래핑 대상 사이트 + Notion API + 프록시 서버 접근 허용
 		host_permissions: [
 			'https://jasoseol.com/*',
 			'https://*.jasoseol.com/*',
@@ -45,6 +45,9 @@ export default defineConfig({
 			'https://www.saramin.co.kr/*',
 			'https://www.jobkorea.co.kr/*',
 			'https://api.notion.com/*',
+			'http://localhost/*',
+			'http://127.0.0.1/*',
+			'https://*/*',
 		],
 	},
 
