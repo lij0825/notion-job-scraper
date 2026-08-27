@@ -5,6 +5,23 @@
 
 ---
 
+## [v1.0.14] - 2026-08-27
+
+### 🐛 버그 수정 (Bug Fixes)
+- **프로덕션 배포 시 `localhost:3000` 참조 오류 해결**
+	- Vite / WXT 빌드 시점 환경 변수 검증 가드(Fail-fast) 도입 (`wxt.config.ts`)
+	- 프로덕션 환경에서 Vercel 프록시 URL(`https://notion-job-scraper-server.vercel.app`) 자동 리졸브 및 `.env.production` 환경 분리
+	- 배포 번들 내 `localhost` 잔존 여부를 사전 검사하는 자동 무결성 검증 스크립트(`scripts/verify-bundle.mjs`) 구축
+
+### 🚀 개선 및 리팩토링 (Improvements)
+- **사용자 친화적 에러 핸들링 시스템 구축 (`utils/errors.ts`)**
+	- 기술 디버그 로그(콘솔/Sentry)와 사용자 안내 문구(UI Toast/Callout) 분리
+	- 네트워크 단절, Vercel 5xx 서버 점검, 세션 만료, Notion DB 권한 오류별 명확한 상황별 사용자 안내 메시지 매핑
+- **WXT Background Message Listener 타입 정의 및 비동기 응답 표준화**
+	- `browser.runtime.onMessage.addListener` 비동기 `return true;` 반환 보장 및 TypeScript 진단 정합성 확보
+
+---
+
 ## [v1.0.13] - 2026-08-26
 
 ### ✨ 신규 기능 및 개선 (Features & Improvements)

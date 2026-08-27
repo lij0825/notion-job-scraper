@@ -3,6 +3,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import packageJson from './package.json';
 
+const DEFAULT_PROD_PROXY_URL = 'https://notion-job-scraper-server.vercel.app';
+const DEFAULT_DEV_PROXY_URL = 'http://localhost:3000';
+
 // 릴리즈 패키징 폴더 자동 보장
 const releaseDir = path.resolve('.output/releases/v' + packageJson.version);
 if (!fs.existsSync(releaseDir)) {
@@ -37,7 +40,7 @@ export default defineConfig({
 		},
 		// MV3 필수 권한
 		permissions: ['storage', 'identity', 'tabs', 'scripting', 'activeTab'],
-		// 스크래핑 대상 사이트 + Notion API + 프록시 서버 접근 허용
+		// 스크래핑 대상 사이트 + Notion API + Vercel 프록시 서버 접근 허용
 		host_permissions: [
 			'https://jasoseol.com/*',
 			'https://*.jasoseol.com/*',
@@ -45,9 +48,10 @@ export default defineConfig({
 			'https://www.saramin.co.kr/*',
 			'https://www.jobkorea.co.kr/*',
 			'https://api.notion.com/*',
+			'https://*.vercel.app/*',
+			'https://notion-job-scraper-server.vercel.app/*',
 			'http://localhost/*',
 			'http://127.0.0.1/*',
-			'https://*/*',
 		],
 	},
 
@@ -68,21 +72,40 @@ export default defineConfig({
 		},
 	},
 
-	// Vite 설정: PROXY_URL 및 Sentry/버전 환경변수 주입
-	vite: () => ({
-		define: {
-			'import.meta.env.VITE_APP_VERSION': JSON.stringify(packageJson.version),
-			'import.meta.env.VITE_SENTRY_DSN': JSON.stringify(
-				process.env['VITE_SENTRY_DSN'] ?? ''
-			),
-			// VITE_PROXY_URL 환경변수가 없으면 로컬 개발 서버 URL을 기본값으로 사용
-			'import.meta.env.VITE_PROXY_URL': JSON.stringify(
-				process.env['VITE_PROXY_URL'] ?? 'http://localhost:3000'
-			),
-			// NOTION_CLIENT_ID는 공개 정보이므로 클라이언트에 노출 가능
-			'import.meta.env.VITE_NOTION_CLIENT_ID': JSON.stringify(
-				process.env['VITE_NOTION_CLIENT_ID'] ?? ''
-			),
-		},
-	}),
+	// Vite 설정: 환경별 PROXY_URL 검증 및 주입
+	vite: (env) => {
+		const isProduction = env.mode === 'production' || env.command === 'build';
+		const rawProxyUrl = process.env['VITE_PROXY_URL'];
+
+		let resolvedProxyUrl: string;
+
+		if (isProduction) {
+			if (rawProxyUrl && (rawProxyUrl.includes('localhost') || rawProxyUrl.includes('127.0.0.1'))) {
+				if (!process.env['ALLOW_LOCAL_PROXY_IN_PROD']) {
+					throw new Error(
+						`[Build Error] 프로덕션 빌드에 로컬 프록시 URL(${rawProxyUrl})이 지정되었습니다. ` +
+						`VITE_PROXY_URL을 Vercel 프로덕션 도메인(${DEFAULT_PROD_PROXY_URL})으로 설정하거나 환경변수를 비워주세요.`
+					);
+				}
+			}
+			resolvedProxyUrl = rawProxyUrl || DEFAULT_PROD_PROXY_URL;
+		} else {
+			resolvedProxyUrl = rawProxyUrl || DEFAULT_DEV_PROXY_URL;
+		}
+
+		console.log(`[WXT Build] Mode: ${env.mode}, Resolved Proxy URL: ${resolvedProxyUrl}`);
+
+		return {
+			define: {
+				'import.meta.env.VITE_APP_VERSION': JSON.stringify(packageJson.version),
+				'import.meta.env.VITE_SENTRY_DSN': JSON.stringify(
+					process.env['VITE_SENTRY_DSN'] ?? ''
+				),
+				'import.meta.env.VITE_PROXY_URL': JSON.stringify(resolvedProxyUrl),
+				'import.meta.env.VITE_NOTION_CLIENT_ID': JSON.stringify(
+					process.env['VITE_NOTION_CLIENT_ID'] ?? ''
+				),
+			},
+		};
+	},
 });

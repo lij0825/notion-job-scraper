@@ -8,6 +8,7 @@ declare global {
   const MigrationError: typeof import('wxt/storage')['MigrationError']
   const PopupSentry: typeof import('C:/Users/이인준/.gemini/antigravity/scratch/notion-job-scraper/extension/utils/sentry-popup')['PopupSentry']
   const browser: typeof import('wxt/browser')['browser']
+  const classifyError: typeof import('C:/Users/이인준/.gemini/antigravity/scratch/notion-job-scraper/extension/utils/errors')['classifyError']
   const clearConnectionError: typeof import('C:/Users/이인준/.gemini/antigravity/scratch/notion-job-scraper/extension/utils/storage')['clearConnectionError']
   const clearStoredData: typeof import('C:/Users/이인준/.gemini/antigravity/scratch/notion-job-scraper/extension/utils/storage')['clearStoredData']
   const cn: typeof import('C:/Users/이인준/.gemini/antigravity/scratch/notion-job-scraper/extension/utils/cn')['cn']
@@ -50,6 +51,9 @@ declare global {
 }
 // for type re-export
 declare global {
+  // @ts-ignore
+  export type { AppErrorCode, UserFriendlyError } from 'C:/Users/이인준/.gemini/antigravity/scratch/notion-job-scraper/extension/utils/errors'
+  import('C:/Users/이인준/.gemini/antigravity/scratch/notion-job-scraper/extension/utils/errors')
   // @ts-ignore
   export type { SiteKey, JobData, StorageData, ConnectionError, AuthStatus, BackgroundMessage, ScrapeMessage, BackgroundResponse, ScrapeResponse, NotionTokenResponse } from 'C:/Users/이인준/.gemini/antigravity/scratch/notion-job-scraper/extension/utils/types'
   import('C:/Users/이인준/.gemini/antigravity/scratch/notion-job-scraper/extension/utils/types')

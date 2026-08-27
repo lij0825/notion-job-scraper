@@ -190,7 +190,7 @@ async function startOAuthFlow(): Promise<BackgroundResponse<AuthStatus>> {
 	}
 
 	// Proxy 서버에 코드 교환 요청
-	const proxyUrl = import.meta.env.VITE_PROXY_URL ?? 'http://localhost:3000';
+	const proxyUrl = import.meta.env.VITE_PROXY_URL;
 	let tokenData: NotionTokenResponse;
 
 	try {
@@ -202,27 +202,33 @@ async function startOAuthFlow(): Promise<BackgroundResponse<AuthStatus>> {
 
 		if (!tokenResponse.ok) {
 			const errorBody = await tokenResponse.text();
-			const errorMsg = `토큰 교환 실패 (${tokenResponse.status}): ${errorBody}`;
-			await setConnectionError(errorMsg);
+			const classified = classifyError(new Error(errorBody), {
+				url: `${proxyUrl}/api/token`,
+				status: tokenResponse.status,
+				rawResponse: errorBody,
+				action: 'Notion Token Exchange',
+			});
+			console.error('[OAuth Token Error]', classified.devMessage);
+			BackgroundSentry.captureException(new Error(classified.devMessage));
+			await setConnectionError(classified.userMessage);
 			return {
 				success: false,
-				error: errorMsg,
+				error: classified.userMessage,
 			};
 		}
 
 		tokenData = (await tokenResponse.json()) as NotionTokenResponse;
 	} catch (err) {
-		const rawMsg = err instanceof Error ? err.message : String(err);
-		let errorMsg: string;
-		if (proxyUrl.includes('localhost') || proxyUrl.includes('127.0.0.1')) {
-			errorMsg = `프록시 서버 연결 실패 (${proxyUrl}): 로컬 OAuth 프록시 서버가 실행 중이지 않습니다. 'server' 디렉토리에서 'npm run dev'를 실행해주세요. (${rawMsg})`;
-		} else {
-			errorMsg = `프록시 서버 연결 실패 (${proxyUrl}): 서버 상태 및 네트워크 연결을 확인해주세요. (${rawMsg})`;
-		}
-		await setConnectionError(errorMsg);
+		const classified = classifyError(err, {
+			url: `${proxyUrl}/api/token`,
+			action: 'Proxy Server Connection',
+		});
+		console.error('[OAuth Proxy Error]', classified.devMessage);
+		BackgroundSentry.captureException(err);
+		await setConnectionError(classified.userMessage);
 		return {
 			success: false,
-			error: errorMsg,
+			error: classified.userMessage,
 		};
 	}
 
