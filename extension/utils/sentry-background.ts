@@ -8,7 +8,7 @@ import { sanitizeSentryEvent } from './sentry-sanitize';
 export function initBackgroundSentry(): void {
 	const isProduction = import.meta.env.PROD || process.env['NODE_ENV'] === 'production';
 	const dsn = import.meta.env.VITE_SENTRY_DSN || process.env['VITE_SENTRY_DSN'] || '';
-	const version = import.meta.env.VITE_APP_VERSION || process.env['npm_package_version'] || '1.0.0';
+	const version = import.meta.env.VITE_APP_VERSION || process.env['npm_package_version'] || '1.0.14';
 
 	Sentry.init({
 		dsn,

@@ -9,6 +9,9 @@
 		"build:server": "npm --prefix server run build",
 		"build:ext": "npm --prefix extension run build",
 		"build:ext:firefox": "npm --prefix extension run build:firefox",
+		"zip:ext": "npm --prefix extension run zip",
+		"zip:ext:firefox": "npm --prefix extension run zip:firefox",
+		"package:all": "npm --prefix extension run zip && npm --prefix extension run zip:firefox",
 		"test:server": "npm --prefix server run test",
 		"test:ext": "npm --prefix extension run test",
 		"test": "npm run test:server && npm run test:ext"
