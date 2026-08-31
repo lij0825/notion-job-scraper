@@ -1,1 +1,1 @@
-export { default } from './server/api/token';
+export { default } from '../server/api/token';
