@@ -3,7 +3,6 @@ name: Release & Deploy Browser Extensions
 permissions:
   contents: write
 
-# 원할 때 GitHub Actions 웹에서 버튼 '딸깍'으로만 실행되도록 완전 수동(workflow_dispatch) 설정
 on:
   workflow_dispatch:
     inputs:
