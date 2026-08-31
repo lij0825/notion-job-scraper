@@ -12,7 +12,7 @@
 		"zip": "wxt zip && npm run verify:bundle",
 		"zip:firefox": "wxt zip --browser firefox && npm run verify:bundle",
 		"submit": "wxt submit",
-		"submit:firefox": "wxt submit",
+		"submit:firefox": "node scripts/submit-firefox.mjs",
 		"submit:chrome": "wxt submit",
 		"verify:bundle": "node scripts/verify-bundle.mjs",
 		"test": "vitest run",
