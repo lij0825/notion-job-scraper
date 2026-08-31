@@ -67,6 +67,30 @@ export function useLogoutMutation() {
 	});
 }
 
+export function useSaveManualAuthMutation() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: async ({ apiKey, databaseId }: { apiKey: string; databaseId: string }) => {
+			const res = await sendToBackground<AuthStatus>(
+				{
+					type: 'SAVE_MANUAL_AUTH',
+					apiKey,
+					databaseId,
+				},
+				10000
+			);
+			if (!res.success) {
+				throw new Error(res.error || '직접 연동 저장에 실패했습니다.');
+			}
+			return res.data;
+		},
+		onSuccess: (data) => {
+			queryClient.setQueryData(AUTH_QUERY_KEY, data);
+		},
+	});
+}
+
 export function useDismissErrorMutation() {
 	const queryClient = useQueryClient();
 
@@ -83,3 +107,5 @@ export function useDismissErrorMutation() {
 		},
 	});
 }
+
+

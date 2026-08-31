@@ -8,6 +8,7 @@ import { Badge } from '../../../components/ui/badge';
 import { NotionPropertyRow } from '../../../components/notion/NotionPropertyRow';
 import { NotionCallout } from '../../../components/notion/NotionCallout';
 import { useLiveScrapeQuery, useSaveJobToNotionMutation } from '../../../hooks/queries/useScrapeQuery';
+import { useAuthStatusQuery } from '../../../hooks/queries/useAuthQuery';
 import {
 	RefreshCw,
 	Sparkles,
@@ -48,6 +49,7 @@ export const ScrapingView: React.FC = () => {
 	const search = useSearch({ strict: false }) as { mode?: 'auto' | 'manual' };
 	const isManualFromUrl = search?.mode === 'manual';
 
+	const { data: authStatus } = useAuthStatusQuery();
 	const { data: jobData, isLoading, error, refetch, isRefetching } = useLiveScrapeQuery();
 	const saveMutation = useSaveJobToNotionMutation();
 
@@ -114,6 +116,11 @@ export const ScrapingView: React.FC = () => {
 
 	const handleSave = async () => {
 		if (!editableData) return;
+
+		if (!authStatus?.isConnected) {
+			setValidationError('Notion에 연결되어 있지 않습니다. 상단 [설정]에서 Notion을 먼저 연동해 주세요.');
+			return;
+		}
 
 		if (!editableData.title.trim()) {
 			setValidationError('직무명(Title)을 입력해 주세요.');
@@ -226,6 +233,22 @@ export const ScrapingView: React.FC = () => {
 
 	return (
 		<div className="flex flex-col p-3 space-y-3 bg-background">
+			{!authStatus?.isConnected && (
+				<NotionCallout variant="warning" icon={<AlertCircle className="w-3.5 h-3.5" />}>
+					<div className="flex items-center justify-between gap-1.5 w-full">
+						<span className="text-[11px]">Notion 연동이 필요합니다.</span>
+						<Button
+							variant="outline"
+							size="sm"
+							className="h-6 text-[10px] px-2 py-0 shrink-0 border-border bg-card hover:bg-accent"
+							onClick={() => navigate({ to: '/settings', search: { tab: 'oauth' } })}
+						>
+							연동 설정
+						</Button>
+					</div>
+				</NotionCallout>
+			)}
+
 			{/* Notion Page Header Section */}
 			<div className="flex items-center justify-between px-1">
 				<div className="flex items-center gap-1.5">

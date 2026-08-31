@@ -56,7 +56,21 @@ export function classifyError(
 		};
 	}
 
-	// 2. HTTP 5xx 서버 에러
+	// 2. OAuth 토큰 교환 중 프록시 서버 에러 또는 배포 미발견
+	if (
+		context.action === 'Notion Token Exchange' &&
+		((status && (status >= 500 || status === 404)) || rawMessage.includes('DEPLOYMENT_NOT_FOUND'))
+	) {
+		return {
+			code: 'SERVER_ERROR',
+			userMessage:
+				'OAuth 인증 서버에 연결할 수 없거나 서버 점검 중입니다. 설정의 [직접 연동] 탭에서 API 키로 바로 연결해 보세요.',
+			devMessage: `[ServerError ${status ?? 'N/A'}] ${context.action} failed: ${context.rawResponse || rawMessage}`,
+			statusCode: status,
+		};
+	}
+
+	// 3. 일반 HTTP 5xx 서버 에러
 	if (status && status >= 500) {
 		return {
 			code: 'SERVER_ERROR',
@@ -76,7 +90,7 @@ export function classifyError(
 		};
 	}
 
-	// 4. HTTP 404 데이터베이스 미존재
+	// 4. HTTP 404 데이터베이스 미존재 (Notion API 호출 시)
 	if (status === 404 || rawMessage.includes('object_not_found')) {
 		return {
 			code: 'DATABASE_NOT_FOUND',
@@ -104,3 +118,4 @@ export function classifyError(
 		statusCode: status,
 	};
 }
+

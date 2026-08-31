@@ -1,5 +1,6 @@
 import { browser } from 'wxt/browser';
 import { createJobPage, validateDatabase, createNotionDatabase } from '../../utils/notion';
+import { classifyError } from '../../utils/errors';
 import {
 	getStoredData,
 	setStoredData,
@@ -86,6 +87,8 @@ async function handleMessage(message: BackgroundMessage): Promise<BackgroundResp
 			return saveDatabaseId(message.databaseId);
 		case 'CREATE_DATABASE':
 			return handleCreateDatabase(message.parentPageId);
+		case 'SAVE_MANUAL_AUTH':
+			return saveManualAuth(message.apiKey, message.databaseId);
 		case 'DISMISS_ERROR':
 			return dismissConnectionError();
 		default: {
@@ -400,6 +403,57 @@ function extractDatabaseId(input: string): string {
 }
 
 // ===========================================================
+// 수동 API Key 및 Database ID 직접 연동
+// ===========================================================
+
+/**
+ * 사용자가 직접 입력한 Notion API Key(내부 통합 토큰)와 Database ID를 검증하고 저장합니다.
+ */
+async function saveManualAuth(
+	apiKey: string,
+	databaseId: string
+): Promise<BackgroundResponse<AuthStatus>> {
+	const trimmedKey = apiKey.trim();
+	const trimmedDb = databaseId.trim();
+
+	if (!trimmedKey) {
+		return { success: false, error: 'Notion API Key (Internal Integration Secret)를 입력해 주세요.' };
+	}
+	if (!trimmedDb) {
+		return { success: false, error: 'Notion 페이지 또는 Database 링크를 입력해 주세요.' };
+	}
+
+	const cleanedId = extractDatabaseId(trimmedDb);
+
+	try {
+		const { name } = await validateDatabase(trimmedKey, cleanedId);
+		await clearConnectionError();
+		await setStoredData({
+			accessToken: trimmedKey,
+			databaseId: cleanedId,
+			workspaceName: `직접 연동 (${name || 'Notion'})`,
+		});
+
+		return {
+			success: true,
+			data: {
+				isConnected: true,
+				workspaceName: `직접 연동 (${name || 'Notion'})`,
+				databaseId: cleanedId,
+			},
+		};
+	} catch (err) {
+		const classified = classifyError(err, {
+			action: 'Manual Notion Connection',
+		});
+		return {
+			success: false,
+			error: classified.userMessage,
+		};
+	}
+}
+
+// ===========================================================
 // 연결 에러 닫기 (Dismiss)
 // ===========================================================
 
@@ -408,3 +462,4 @@ async function dismissConnectionError(): Promise<BackgroundResponse> {
 	await clearConnectionError();
 	return { success: true, data: undefined };
 }
+

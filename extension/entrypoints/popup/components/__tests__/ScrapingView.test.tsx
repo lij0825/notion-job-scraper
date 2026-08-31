@@ -37,6 +37,13 @@ const renderWithTestRouter = (initialPath: string = '/') => {
 describe('ScrapingView (채용 공고 스크래핑 및 직접 입력 뷰)', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		mockRuntimeSendMessage.mockImplementation(async (msg: unknown) => {
+			const m = msg as { type?: string };
+			if (m?.type === 'GET_AUTH_STATUS') {
+				return { success: true, data: { isConnected: true, workspaceName: '테스트 워크스페이스' } };
+			}
+			return { success: true, data: {} };
+		});
 	});
 
 	it('Given 채용 공고가 성공적으로 스크래핑되었을 때, When 화면이 렌더링되면, Then 공고 정보와 사이트 뱃지가 표시된다', async () => {
@@ -120,9 +127,16 @@ describe('ScrapingView (채용 공고 스크래핑 및 직접 입력 뷰)', () =
 		mockTabsQuery.mockResolvedValue([
 			{ id: 1, url: 'https://careers.company.com/job/999', title: '' },
 		] as unknown as Awaited<ReturnType<typeof browser.tabs.query>>);
-		mockRuntimeSendMessage.mockResolvedValueOnce({
-			success: true,
-			data: { pageId: 'notion-page-999' },
+
+		mockRuntimeSendMessage.mockImplementation(async (msg: unknown) => {
+			const m = msg as { type?: string };
+			if (m?.type === 'GET_AUTH_STATUS') {
+				return { success: true, data: { isConnected: true, workspaceName: '테스트 워크스페이스' } };
+			}
+			if (m?.type === 'SAVE_TO_NOTION') {
+				return { success: true, data: { pageId: 'notion-page-999' } };
+			}
+			return { success: true, data: {} };
 		});
 
 		renderWithTestRouter();
@@ -173,6 +187,14 @@ describe('ScrapingView (채용 공고 스크래핑 및 직접 입력 뷰)', () =
 			{ id: 1, url: 'https://careers.company.com', title: '' },
 		] as unknown as Awaited<ReturnType<typeof browser.tabs.query>>);
 
+		mockRuntimeSendMessage.mockImplementation(async (msg: unknown) => {
+			const m = msg as { type?: string };
+			if (m?.type === 'GET_AUTH_STATUS') {
+				return { success: true, data: { isConnected: true, workspaceName: '테스트 워크스페이스' } };
+			}
+			return { success: true, data: {} };
+		});
+
 		renderWithTestRouter();
 
 		await waitFor(() => {
@@ -191,6 +213,8 @@ describe('ScrapingView (채용 공고 스크래핑 및 직접 입력 뷰)', () =
 
 		// Then
 		expect(screen.getByText('직무명(Title)을 입력해 주세요.')).toBeInTheDocument();
-		expect(mockRuntimeSendMessage).not.toHaveBeenCalled();
+		expect(mockRuntimeSendMessage).not.toHaveBeenCalledWith(
+			expect.objectContaining({ type: 'SAVE_TO_NOTION' })
+		);
 	});
 });

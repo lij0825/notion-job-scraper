@@ -70,6 +70,7 @@ export type BackgroundMessage =
 	| { type: 'SAVE_TO_NOTION'; payload: JobData }
 	| { type: 'SAVE_DATABASE_ID'; databaseId: string }
 	| { type: 'CREATE_DATABASE'; parentPageId: string }
+	| { type: 'SAVE_MANUAL_AUTH'; apiKey: string; databaseId: string }
 	| { type: 'DISMISS_ERROR' };
 
 /** Popup → Content Script 스크래핑 요청 */

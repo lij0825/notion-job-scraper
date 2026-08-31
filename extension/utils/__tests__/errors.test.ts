@@ -50,4 +50,17 @@ describe('에러 분류 및 사용자 친화적 메시지 변환 (classifyError)
 		expect(result.code).toBe('DATABASE_ACCESS_DENIED');
 		expect(result.userMessage).toContain('Notion 페이지 접근 권한이 없습니다');
 	});
+
+	it('Given OAuth 토큰 교환 중 404/배포 없음 에러가 발생했을 때, When classifyError를 호출하면, Then 직접 연동 안내 메시지와 SERVER_ERROR 코드를 반환한다', () => {
+		const result = classifyError(new Error('DEPLOYMENT_NOT_FOUND'), {
+			status: 404,
+			rawResponse: 'The deployment could not be found on Vercel.',
+			action: 'Notion Token Exchange',
+		});
+
+		expect(result.code).toBe('SERVER_ERROR');
+		expect(result.userMessage).toContain('OAuth 인증 서버에 연결할 수 없거나');
+		expect(result.userMessage).toContain('직접 연동');
+	});
 });
+

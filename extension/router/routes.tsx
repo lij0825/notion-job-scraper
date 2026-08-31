@@ -46,32 +46,13 @@ export const scrapingSearchSchema = z.object({
 });
 
 export const settingsSearchSchema = z.object({
-	tab: z.enum(['existing', 'create']).optional().catch('existing'),
+	tab: z.enum(['oauth', 'manual', 'existing', 'create']).optional().catch('oauth'),
 });
 
 export const indexRoute = createRoute({
 	getParentRoute: () => rootRoute,
 	path: '/',
 	validateSearch: (search) => scrapingSearchSchema.parse(search),
-	beforeLoad: async ({ context }) => {
-		try {
-			const authStatus = await context.queryClient.ensureQueryData(authStatusQueryOptions);
-			if (!authStatus?.isConnected) {
-				throw redirect({
-					to: '/settings',
-					search: { tab: 'existing' },
-				});
-			}
-		} catch (err) {
-			if (err && typeof err === 'object' && 'to' in err) {
-				throw err;
-			}
-			throw redirect({
-				to: '/settings',
-				search: { tab: 'existing' },
-			});
-		}
-	},
 	component: lazyRouteComponent(() => import('../entrypoints/popup/components/ScrapingView')),
 	pendingComponent: RootPending,
 	errorComponent: ({ error, reset }) => <ErrorFallback error={error} resetError={reset} />,
