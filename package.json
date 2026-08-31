@@ -17,5 +17,13 @@
 		"test:server": "npm --prefix server run test",
 		"test:ext": "npm --prefix extension run test",
 		"test": "npm run test:server && npm run test:ext"
+	},
+	"devDependencies": {
+		"@types/node": "^20.19.43",
+		"@vercel/node": "^3.2.8",
+		"typescript": "^5.6.3"
+	},
+	"dependencies": {
+		"@sentry/node": "^10.70.0"
 	}
 }
