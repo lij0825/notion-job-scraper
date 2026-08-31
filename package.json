@@ -11,6 +11,7 @@
 		"build:ext:firefox": "npm --prefix extension run build:firefox",
 		"zip:ext": "npm --prefix extension run zip",
 		"zip:ext:firefox": "npm --prefix extension run zip:firefox",
+		"submit:ext:firefox": "npm --prefix extension run submit:firefox",
 		"package:all": "npm --prefix extension run zip && npm --prefix extension run zip:firefox",
 		"test:server": "npm --prefix server run test",
 		"test:ext": "npm --prefix extension run test",

@@ -11,6 +11,8 @@
 		"build:firefox": "wxt build --browser firefox && npm run verify:bundle",
 		"zip": "wxt zip && npm run verify:bundle",
 		"zip:firefox": "wxt zip --browser firefox && npm run verify:bundle",
+		"submit:firefox": "wxt submit --browser firefox",
+		"submit:chrome": "wxt submit --browser chrome",
 		"verify:bundle": "node scripts/verify-bundle.mjs",
 		"test": "vitest run",
 		"test:watch": "vitest",
