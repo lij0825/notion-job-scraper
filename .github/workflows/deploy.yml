@@ -3,14 +3,17 @@ name: Release & Deploy Browser Extensions
 permissions:
   contents: write
 
+# 원할 때 GitHub Actions 웹에서 버튼 '딸깍'으로만 실행되도록 완전 수동(workflow_dispatch) 설정
 on:
-  push:
-    tags:
-      - 'v*'
   workflow_dispatch:
     inputs:
       submit_firefox:
         description: 'Submit to Firefox Add-ons (AMO)'
+        required: true
+        type: boolean
+        default: true
+      create_github_release:
+        description: 'Create GitHub Release with Zip packages'
         required: true
         type: boolean
         default: true
@@ -30,6 +33,13 @@ jobs:
           node-version: 20
           cache: 'npm'
 
+      - name: Get Extension Version
+        id: pkg
+        run: |
+          VERSION=$(node -p "require('./extension/package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Target Release Version: v$VERSION"
+
       - name: Install Root Dependencies
         run: npm ci
 
@@ -43,9 +53,11 @@ jobs:
         run: npm run package:all
 
       - name: Upload Release Artifacts to GitHub Release
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: github.event.inputs.create_github_release == 'true'
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: v${{ steps.pkg.outputs.version }}
+          name: Release v${{ steps.pkg.outputs.version }}
           files: |
             extension/.output/releases/v*/*.zip
           generate_release_notes: true
@@ -53,7 +65,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Submit to Mozilla Add-ons (Firefox)
-        if: startsWith(github.ref, 'refs/tags/v') || github.event.inputs.submit_firefox == 'true'
+        if: github.event.inputs.submit_firefox == 'true'
         working-directory: ./extension
         run: npm run submit:firefox
         env:
