@@ -58,8 +58,10 @@ export const AuthView: React.FC = () => {
 	useEffect(() => {
 		if (search?.tab) {
 			setActiveTab(search.tab);
+		} else {
+			setActiveTab(isConnected ? 'existing' : 'oauth');
 		}
-	}, [search?.tab]);
+	}, [search?.tab, isConnected]);
 	const [databaseId, setDatabaseId] = useState(authStatus?.databaseId ?? '');
 	const [parentPageId, setParentPageId] = useState('');
 

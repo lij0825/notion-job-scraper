@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { browser } from 'wxt/browser';
 import type { AuthStatus, BackgroundMessage, BackgroundResponse } from '../../utils/types';
 
-async function sendToBackground<T>(message: BackgroundMessage, timeoutMs = 3000): Promise<BackgroundResponse<T>> {
+async function sendToBackground<T>(message: BackgroundMessage, timeoutMs = 15000): Promise<BackgroundResponse<T>> {
 	const messagePromise = browser.runtime.sendMessage(message) as Promise<BackgroundResponse<T>>;
 	const timeoutPromise = new Promise<BackgroundResponse<T>>((resolve) =>
 		setTimeout(() => resolve({ success: false, error: 'Background 응답 시간 초과' } as BackgroundResponse<T>), timeoutMs)
@@ -39,7 +39,7 @@ export function useConnectMutation() {
 
 	return useMutation({
 		mutationFn: async () => {
-			const res = await sendToBackground<AuthStatus>({ type: 'START_OAUTH' });
+			const res = await sendToBackground<AuthStatus>({ type: 'START_OAUTH' }, 180000);
 			if (!res.success) {
 				throw new Error(res.error || 'Notion OAuth 인증에 실패했습니다.');
 			}
