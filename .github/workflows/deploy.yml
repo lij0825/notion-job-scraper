@@ -53,9 +53,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Submit to Mozilla Add-ons (Firefox)
-        if: (startsWith(github.ref, 'refs/tags/v') || github.event.inputs.submit_firefox == 'true') && env.FIREFOX_JWT_ISSUER != ''
+        if: (startsWith(github.ref, 'refs/tags/v') || github.event.inputs.submit_firefox == 'true') && secrets.FIREFOX_JWT_ISSUER != ''
         working-directory: ./extension
-        run: npm run submit:firefox
+        run: npx wxt submit
         env:
           FIREFOX_EXTENSION_ID: ${{ secrets.FIREFOX_EXTENSION_ID || 'notion-job-scraper@lij0825.com' }}
           FIREFOX_JWT_ISSUER: ${{ secrets.FIREFOX_JWT_ISSUER }}
