@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import packageJson from './package.json';
 
-const DEFAULT_PROD_PROXY_URL = 'https://notion-job-scraper-server.vercel.app';
+const DEFAULT_PROD_PROXY_URL = 'https://notion-job-scraper.vercel.app';
 const DEFAULT_DEV_PROXY_URL = 'http://localhost:3000';
 
 // 릴리즈 패키징 폴더 자동 보장
