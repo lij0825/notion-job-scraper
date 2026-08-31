@@ -16,7 +16,8 @@
 		"package:all": "npm --prefix extension run zip && npm --prefix extension run zip:firefox",
 		"test:server": "npm --prefix server run test",
 		"test:ext": "npm --prefix extension run test",
-		"test": "npm run test:server && npm run test:ext"
+		"test": "npm run test:server && npm run test:ext",
+		"bump": "node scripts/bump-version.mjs"
 	},
 	"devDependencies": {
 		"@types/node": "^20.19.43",
