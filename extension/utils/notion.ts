@@ -1,5 +1,6 @@
 import { Client } from '@notionhq/client';
 import type { JobData } from './types';
+import { normalizeNotionId } from './notion-id';
 
 /** Notion paragraph 블록 하나의 최대 텍스트 길이 (API 제한) */
 const MAX_BLOCK_TEXT_LENGTH = 2000;
@@ -154,29 +155,8 @@ export async function validateDatabase(
 	return { valid: true, name };
 }
 
-/**
- * Helper to extract 32-char hex ID from URL or raw ID
- */
 export function parseNotionId(input: string): string {
-	try {
-		const url = new URL(input);
-		const pathname = url.pathname;
-		const cleanPath = pathname.replace(/-/g, '');
-		const endMatch = cleanPath.match(/[a-f0-9]{32}$/i);
-		if (endMatch) {
-			return endMatch[0];
-		}
-		const pathMatch = cleanPath.match(/[a-f0-9]{32}/i);
-		if (pathMatch) {
-			return pathMatch[0];
-		}
-	} catch {
-		// Not a URL
-	}
-
-	const cleanInput = input.replace(/-/g, '');
-	const match = cleanInput.match(/[a-f0-9]{32}/i);
-	return match ? match[0] : input;
+	return normalizeNotionId(input);
 }
 
 /**

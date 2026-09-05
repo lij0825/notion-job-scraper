@@ -68,6 +68,6 @@ jobs:
         working-directory: ./extension
         run: npm run submit:firefox
         env:
-          FIREFOX_EXTENSION_ID: ${{ secrets.FIREFOX_EXTENSION_ID || 'notion-job-scraper@lij0825.com' }}
+          FIREFOX_EXTENSION_ID: 'notion-job-scraper@lij0825.com'
           FIREFOX_JWT_ISSUER: ${{ secrets.FIREFOX_JWT_ISSUER }}
           FIREFOX_JWT_SECRET: ${{ secrets.FIREFOX_JWT_SECRET }}

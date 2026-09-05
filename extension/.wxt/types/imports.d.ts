@@ -29,6 +29,7 @@ declare global {
   const initBackgroundSentry: typeof import('C:/Users/이인준/.gemini/antigravity/scratch/notion-job-scraper/extension/utils/sentry-background')['initBackgroundSentry']
   const initPopupSentry: typeof import('C:/Users/이인준/.gemini/antigravity/scratch/notion-job-scraper/extension/utils/sentry-popup')['initPopupSentry']
   const injectScript: typeof import('wxt/client')['injectScript']
+  const normalizeNotionId: typeof import('C:/Users/이인준/.gemini/antigravity/scratch/notion-job-scraper/extension/utils/notion-id')['normalizeNotionId']
   const parseDeadline: typeof import('C:/Users/이인준/.gemini/antigravity/scratch/notion-job-scraper/extension/utils/sanitize')['parseDeadline']
   const parseNotionId: typeof import('C:/Users/이인준/.gemini/antigravity/scratch/notion-job-scraper/extension/utils/notion')['parseNotionId']
   const sanitizeData: typeof import('C:/Users/이인준/.gemini/antigravity/scratch/notion-job-scraper/extension/utils/sentry-sanitize')['sanitizeData']
